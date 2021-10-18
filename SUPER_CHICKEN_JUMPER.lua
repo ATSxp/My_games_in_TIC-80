@@ -223,7 +223,7 @@ function attack()
  k.x,k.y=p.x+2,p.y+7
  k.x=k.x+k.vx
 end
-
+ 
 function treeDrw(v)
  spr(v.spr,v.x,v.y,v.c,1,0,0,2,2)
 end
