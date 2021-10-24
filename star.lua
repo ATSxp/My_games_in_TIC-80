@@ -18,12 +18,12 @@ sin=math.sin
 palMenu={3,3,3,0,0,0,0,0,0,0,0}
 
 text={
-	[1]="Your oxygen cylinder won't last forever,\nso use the \"green\" machines by getting\nclose and pressing the action button to\nrefill your oxygen tank.",
+ [1]="Your oxygen cylinder won't last forever,\nso use the \"green\" machines by getting\nclose and pressing the action button to\nrefill your oxygen tank.",
  [2]="Damn it! Those parasites have infested\nthe base, use the attack button to defeat\nthem!",
  [3]="If you need to get back somewhere very\nhigh, don't hesitate to use your jet pack. \nRemembering that there is fuel, if you run\nout of fuel you will have to find a \"red\"\nmachine to refuel.",
  [4]="Welcome astronaut! Thank you for\naccepting this quest, your objective is to\nfind a star, it will be used to power the\ncities of Mars. Good luck.",
  [10]="\n\n\n\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bYou dead",
-	[11]="You found the Star! Your mission is\ncomplete.\n\n\n\n\n\n\n\t\t\t\t\t\t\t\t\t\t\t\t\tThanks for playing 'v'",
+ [11]="You found the Star! Your mission is\ncomplete.\n\n\n\n\n\n\n\t\t\t\t\t\t\t\t\t\t\t\t\tThanks for playing 'v'",
  [12]="You get a Keycard!"
 }
 
