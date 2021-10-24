@@ -22,14 +22,14 @@ function ents:new()
 	e.x = e.x or 0 -- X-axis
 	e.y = e.y or 0 -- Y-axis
 	e.w = e.w or 8 -- Width
- e.h = e.h or 8 -- Height
- e.c = 0 -- Chroma key
- e.f = 0 -- Flip
- e.vx = 0 -- Speed X-axis
- e.vy = 0 -- Speed Y-axis
+	e.h = e.h or 8 -- Height
+	e.c = 0 -- Chroma key
+	e.f = 0 -- Flip
+	e.vx = 0 -- Speed X-axis
+	e.vy = 0 -- Speed Y-axis
  
- function e:draw()end -- Methods
- function e:upd()end -- Methods
+	function e:draw()end -- Methods
+	function e:upd()end -- Methods
 	
 	self.add(e) -- Added entity
 	return e
@@ -121,17 +121,17 @@ table.insert(ents, Enemy())
 table.insert(ents, Enemy())
 
 function TIC()
- cls()
- 
- p:draw()
- p:upd()
- 
- for _,v in ipairs(ents)do
- 	if v.id == "enemy" then
-  	v:draw()
-   v:upd()
-  end
- end
-
+	cls()
+	 
+	p:draw()
+	p:upd()
+	 
+	for _,v in ipairs(ents)do
+	 if v.id == "enemy" then
+	  v:draw()
+	  v:upd()
+	 end
+	end
+	
 	t = t + 1
 end
