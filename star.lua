@@ -7,7 +7,7 @@ t=0
 
 to=table.insert
 del=table.remove
-ceil=math.ceil
+ceil=math.ceil 
 max=math.max
 min=math.min
 rand=math.random
