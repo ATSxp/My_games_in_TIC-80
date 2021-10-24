@@ -3,8 +3,6 @@
 -- desc:   Build a female character your way
 -- script: lua
 
--- Watch out!  18+ sprites
-
 t=0
 debug=false
 
