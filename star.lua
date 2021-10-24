@@ -36,7 +36,7 @@ txt={
  t=0,
 }
 
-dirs={
+dirs={ -- directions of boomerang
  {-1,0},
  {1,0},
 }
