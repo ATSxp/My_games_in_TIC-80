@@ -1,6 +1,5 @@
 ents = {} -- Table for entities
---																																	|
--- This is where the magic happens v
+
 -- Add to table
 function ents:add(obj)
 	setmetatable(self,{__index = obj})
@@ -66,4 +65,3 @@ end
 	self.add(e) -- Added entity
 	return e
 end
--- This is where the magic happens ^
