@@ -36,26 +36,34 @@ function ents:new()
 	if type == "top-down" then
 		
 		-- Left/Right/Up/Down
-		if fget(mget((self.x+self.vx)//8,(self.y+self.vy)//8),0)or fget(mget((self.x+(self.w-1)+self.vx)//8,(self.y+self.vy)//8),0)or fget(mget((self.x+self.vx)//8,(self.y+(self.h-1)+self.vy)//8),0)or fget(mget((self.x+(self.w-1)+self.vx)//8,(self.y+(self.h-1)+self.vy)//8),0)then
+		if fget(mget((self.x+self.vx)//8,(self.y+self.vy)//8),0)or 
+		fget(mget((self.x+(self.w-1)+self.vx)//8,(self.y+self.vy)//8),0)or 
+		fget(mget((self.x+self.vx)//8,(self.y+(self.h-1)+self.vy)//8),0)or 
+		fget(mget((self.x+(self.w-1)+self.vx)//8,(self.y+(self.h-1)+self.vy)//8),0)then
 			self.vx,self.vy = 0,0
 		end
 	
 	elseif type == "side-scroll" then
 		
 		-- Left/Right
-		if fget(mget((self.x+self.vx)//8,(self.y+self.vy)//8),0)or fget(mget((self.x+(self.w-1)+self.vx)//8,(self.y+self.vy)//8),0)or fget(mget((self.x+self.vx)//8,(self.y+(self.h-1)+self.vy)//8),0)or fget(mget((self.x+(self.w-1)+self.vx)//8,(self.y+(self.h-1)+self.vy)//8),0)then
+		if fget(mget((self.x+self.vx)//8,(self.y+self.vy)//8),0)or 
+		fget(mget((self.x+(self.w-1)+self.vx)//8,(self.y+self.vy)//8),0)or 
+		fget(mget((self.x+self.vx)//8,(self.y+(self.h-1)+self.vy)//8),0)or 
+		fget(mget((self.x+(self.w-1)+self.vx)//8,(self.y+(self.h-1)+self.vy)//8),0)then
 			self.vx = 0
 		end
 		
 		-- Down
-		if fget(mget((self.x)//8,(self.y+(self.h)+self.vy)//8),0)or fget(mget((self.x+self.w-1)//8,(self.y+(self.h)+self.vy)//8),0)then
+		if fget(mget((self.x)//8,(self.y+(self.h)+self.vy)//8),0)or 
+		fget(mget((self.x+self.w-1)//8,(self.y+(self.h)+self.vy)//8),0)then
 			self.vy = 0
 		else
 			self.vy = self.vy + 0.2 -- gravity
 		end
 		
 		-- Up
-		if self.vy<0 and (fget(mget((self.x+self.vx)//8,(self.y+self.vy)//8),0)or fget(mget((self.x+(self.w-1)+self.vx)//8,(self.y+self.vy)//8),0))then
+		if self.vy<0 and (fget(mget((self.x+self.vx)//8,(self.y+self.vy)//8),0)or 
+		fget(mget((self.x+(self.w-1)+self.vx)//8,(self.y+self.vy)//8),0))then
 			self.vy = 0
 		end
 		
