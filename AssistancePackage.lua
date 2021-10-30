@@ -1,12 +1,12 @@
 ents = {} -- Table for entities
 
 -- Add to table
-function ents:add(obj)
+function entsAdd(obj)
 	setmetatable(self,{__index = obj})
 end
 
 -- Create entity
-function ents:new()
+function entsNew()
 	local e = {} -- Table
 	
 	e.id = e.id or "entity" -- Id
@@ -62,6 +62,6 @@ function ents:new()
 	end
 end
 	
-	self.add(e) -- Added entity
+	selfAdd(e) -- Added entity
 	return e
 end
