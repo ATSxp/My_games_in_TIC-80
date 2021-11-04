@@ -4,7 +4,7 @@ ents = {
 	new = function(self) -- Create entity
 		local o = {} -- Objetcs/Entities
 		
-		o.type = o.type or "undefined"
+		o.type = o.type or "undefined" -- Type of entity (player,enemy,item, etc.)
 		o.id = o.id or "entity" -- Id
 		o.spr = o.spr or 0 -- Sprite
 		o.x = o.x or 0 -- X-axis
