@@ -1,5 +1,5 @@
 t=0
-
+ 
 global_hitpause = 0
 
 dialog = {}
