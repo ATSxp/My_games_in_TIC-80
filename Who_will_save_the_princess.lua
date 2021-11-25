@@ -7,7 +7,7 @@ t=0
 
 _GAME = {
 	on = false,
-	state = 1,
+	state = 	1,
 }
 
 local SPAWN_FLOOR = 16
@@ -27,7 +27,7 @@ function set(tbl)
 	return s
 end
 
-SOLID = set{1,2,3,19,35,37}
+SOLID = set{1,2,3,4,35,37}
 BOARD = set{216}
 INTERACTS = set{35}
 
@@ -76,6 +76,7 @@ end
 
 function dist(x1,y1,x2,y2) return math.max(math.abs(x1-x2),math.abs(y1-y2))end
 function col(x1,y1,w1,h1,x2,y2,w2,h2)return x1<x2+w2 and y1<y2+h2 and x2<x1+w1 and y2<y1+h1 end
+function col2(a,b)if col(a.x,a.y,a.w,a.h,b.x,b.y,b.w,b.h)then return true end end
 
 function layer(a,b)
 	if a.y == b.y then return b.x < a.x end
@@ -401,7 +402,7 @@ function Bat(x,y)
 			s.y = s.y + s.dy
 			
 			if s.atk  then -- stop fly
-			else if s.vx == 0 and s.vy == 0 then s.dy = math.cos(t/10)/4 end 
+			else if s.vx == 0 and s.vy == 0 then s.dy = math.cos(t/16)/6 end 
 			end
 			
 		end
@@ -414,7 +415,9 @@ function Player(x,y)
 	local s = Mob(x,y)
 	s.type = "hero"
 	s.name = "princess"
-	s.hp = 50
+	s.maxHp = 50
+	s.hp = s.maxHp
+	s.potions = 0
 	s.sp = 256
 	s.c = 11
 	s.dmg = 2
@@ -441,6 +444,14 @@ function Player(x,y)
 		else s.sp = s.anims.idle end
 	end
 	
+	function s.onPotion(s)
+		if not s.die and s.hp < s.maxHp then
+			s.potions = s.potions - 1
+			s.hp = s.hp + 20
+			if s.hp > s.maxHp then s.hp = s.maxHp end
+		end
+	end
+	
 	function s.update(s)
 		if s.die then return end
 		s.vx = 0
@@ -462,6 +473,7 @@ function Player(x,y)
 		if btn(1) and btn(2)then bvx,bvy = - 2,2 bChange = true end -- down/left
 		if btn(1) and btn(3)then bvx,bvy = 2,2 bChange = true end -- down/right
 		if btnp(4)then Interact(s) end -- interacts with NPCs
+		if btnp(5)then s:onPotion()end -- Use Potion
 		if (btn(6) and bullet_timer < 0 ) then  -- shoot
 			bullet_timer = 30
 			table.insert(bullet,{sp = 272,x = s.x,y = s.y,vx = bvx*2,vy = bvy*2,f = bf,r = br,w = 8,h = 8})
@@ -498,7 +510,7 @@ function NPC(sp,dialogs)
 			
 			if INTERACTS:contains(s.sp) then s.over = true end
 			if not over and BOARD:contains(s.sp) then
-				sprc(271,s.x,s.y+3,0,1)
+				sprc(270,s.x,s.y+3,0,1)
 			end
 			sprc(s.sp,s.x,s.y,s.c,1,s.f)
 			if not s.over then
@@ -519,10 +531,113 @@ function NPC(sp,dialogs)
 end
 -- How to use: NPC(sprite of npc,{text})
 
+function Item(x,y)
+	local s = Mob(x,y)
+	s.type = "item"
+	s.pickUp = false
+	s.collide = false
+	s.c = - 1
+	s.dy = 0
+	
+	function s.update(s)
+		if s.pickUp then return end
+		
+		if col2(p,s)then
+			s:onPickUp()
+			s.pickUp = true
+		end
+	end
+
+	function s.draw(s)
+		if not s.pickUp then
+			sprc(s.sp,s.x,s.y+s.dy,s.c,1)
+		end
+	end
+	return s
+end
+
+function Potion(x,y)
+	local s = Item(x,y)
+	s.name = "potion"
+	s.supUpdate = s.update
+	s.sp = 225
+	s.c = 0
+	
+	function s.onPickUp(s)
+		p.potions = p.potions + 1
+		addDialog({"You got a POTION!"},2)
+	end
+	function s.update(s)
+		s:supUpdate()
+		s.dy = math.cos(t/16)*2
+	end
+	
+	return s
+end
+
+function Chest(x,y)
+	local s = Item(x,y)
+	s.name = "chest"
+	s.sp = 224
+	s.collide = true
+	s.c = 0
+	s.open = false
+	function s.update(s)
+		if s.open then return end
+		for _,v in ipairs(bullet)do
+			if col2(v,s)then
+				s.open = true
+				if math.random(1,6) == 1 then
+					table.insert(mobs,Potion(s.x,s.y))
+				elseif math.random(1,6) == 2 then
+					addDialog({"Watch out! A bat!!!"})
+					table.insert(mobs,Bat(s.x,s.y+8))
+				else
+					addDialog({"There's nothing..." ,"Good luck next time."})
+				end
+			end
+		end
+		
+	end
+	
+	function s.draw(s)
+		if not s.open then sprc(s.sp,s.x,s.y,s.c,1)
+		else sprc(240,s.x,s.y,s.c,1)end
+	end
+	return s
+end
+
+function Wall(sp)
+	local function fn(x,y)
+		local s = Mob(x,y)
+		s.type = "tile"
+		s.name = "wall"
+		s.collide = true
+		s.sp = sp
+		s.c = 2
+		
+		function s.draw(s)
+			if s.sp == 446 then s.collide = false else s.collide = true end
+			if s.sp == 128 then s.c = 11 end
+			sprc(s.sp,s.x,s.y-8,s.c,1,0,0,1,2)
+		end
+		return s
+	end
+	return fn
+end
+
 spawntiles = {}
 -- Mobs
 spawntiles[192] = Goblin
 spawntiles[193] = Bat
+
+spawntiles[160] = Wall(446)
+spawntiles[161] = Wall(447)
+spawntiles[128] = Wall(128)
+
+-- Items
+spawntiles[224] = Chest
+spawntiles[225] = Potion
 
 -- NPCs
 -- Scavenger
@@ -534,7 +649,8 @@ spawntiles[208] = NPC(208,
 		"Hum... hmm...",
 		"so...",
 		"you mean the knights who have been\nordered to rescue you so far won't arrive\nand you've decided to leave this dungeon\non your own?",
-		"Hahahaha this is a beautiful story." ,
+		"Hahahahahahahaha!",
+		"this is a beautiful story",
 		"Since you're here, I must warn you, there\nare monsters in front of this hallway,\njust be very careful with them."
 	}
 })
@@ -566,19 +682,23 @@ function spawnMobs()
 	end
 end
 
-function lifeBar()
+function Hud()
 	if not p.die then
 		if p.hit > 0 then
 			pal(2,4)
 		end
 		rect(2,0,p.hp,8,2)
 		pal()
+		spr(476,7*8,0,0,1)
+	else
+		spr(475,7*8,0,0,1)
 	end
 	spr(502,0,0,0,1)
 	spr(504,6*8-2,0,0,1)
 	for i = 0,4 do
 		spr(503,8*i+8,0,0,1)
 	end
+	if p.potions > 0 then spr(225,8*8,0,0,1)end
 end
 
 function menuUpdate()
@@ -593,12 +713,12 @@ function menuUpdate()
 		cls()
 		
 		for i=0,15 do pal(i,12)end
-		spr(480,(240-16*5)//2-1,28,11,5,0,0,2,2)
-		spr(480,(240-16*5)//2,28-1,11,5,0,0,2,2)
-		spr(480,(240-16*5)//2,28+1,11,5,0,0,2,2)
-		spr(480,(240-16*5)//2+1,28,11,5,0,0,2,2)
+		spr(14,(240-16*5)//2-1,28,11,5,0,0,2,2)
+		spr(14,(240-16*5)//2,28-1,11,5,0,0,2,2)
+		spr(14,(240-16*5)//2,28+1,11,5,0,0,2,2)
+		spr(14,(240-16*5)//2+1,28,11,5,0,0,2,2)
 		pal()
-		spr(480,(240-16*5)//2,28,11,5,0,0,2,2)
+		spr(14,(240-16*5)//2,28,11,5,0,0,2,2)
 		printb("@ATS_xp",(240-w)//2,120,0,false,1,false,12)
 		clip()
 	end
@@ -630,7 +750,7 @@ function gameUpdate()
 	drawParts()
 	updateDialog()
 	bulletUpdate()
-	lifeBar()
+	Hud()
 end
 
 function Debug()
@@ -668,7 +788,7 @@ function init()
 	parts = {}
 	mobs = {}
 	
-	p = Player(120,68)
+	p = Player(7*8,9*8)
 	bullet = {}
 	bullet_timer = 30
 	bChange = false
