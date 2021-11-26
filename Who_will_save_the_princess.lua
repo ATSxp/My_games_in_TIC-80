@@ -62,10 +62,10 @@ function printb(text,x,y,c,fix,s,sm,cb)
 	print(text,x,y,c,fix,s,sm)
 end
 
--- By: Nesbox
-function printc(s,x,y,c)
-    local w=print(s,0,-8)
-    printb(s,x-(w/2),y,c or 15)
+-- By: Nesbox / me
+function printc(s,x,y,c,f,sc,sm)
+    local w=print(s,0,-18,c,f or false,sc or 1,sm or false)
+    printb(s,x-(w/2),y,c or 15,f or false,sc or 1,sm or false)
 end
 
 -- By Nesbox
@@ -418,6 +418,7 @@ function Player(x,y)
 	s.maxHp = 50
 	s.hp = s.maxHp
 	s.potions = 0
+	s.boost = 0
 	s.sp = 256
 	s.c = 11
 	s.dmg = 2
@@ -458,6 +459,8 @@ function Player(x,y)
 		s.vy = 0
 		bullet_timer = bullet_timer - 1
 		if s.hit > 0 then s.hit = s.hit - 1 end
+		if s.boost > 0 then s.boost = s.boost - 1 s.speed = 2 
+		else s.speed = 1 end
 		
 		s.anims.walk = anim({257,258})
 		s.anims.atk = anim({259,260},16)
@@ -575,6 +578,23 @@ function Potion(x,y)
 	return s
 end
 
+function Boost(x,y)
+	local s = Item(x,y)
+	s.sp = 226
+	s.c = 0
+	s.supUpdate = s.update
+	
+	function s.onPickUp(s)
+		addDialog({"You got a Boost"},4)
+		p.boost = 500
+	end
+	function s.update(s)
+		s:supUpdate()
+		s.dy = math.cos(t/16)*2
+	end
+	return s
+end
+
 function Chest(x,y)
 	local s = Item(x,y)
 	s.name = "chest"
@@ -638,6 +658,7 @@ spawntiles[128] = Wall(128)
 -- Items
 spawntiles[224] = Chest
 spawntiles[225] = Potion
+spawntiles[226] = Boost
 
 -- NPCs
 -- Scavenger
@@ -682,6 +703,25 @@ function spawnMobs()
 	end
 end
 
+function buttonUpdate()
+	for i,s in ipairs(butn)do
+		
+		if btnp(0) and menu_state > 1 then
+			menu_state = menu_state - 1
+		elseif btnp(1) and menu_state < i then
+			menu_state = menu_state + 1
+		elseif btnp(4)and s.id == menu_state then
+			s:on()
+		end
+		
+		local w = print(s.str,0,-6,12)
+		if s.id == menu_state then
+			printb("<",s.x+w,s.y,12)
+		end
+		printc(s.str,s.x,s.y,12)
+	end
+end
+
 function Hud()
 	if not p.die then
 		if p.hit > 0 then
@@ -701,24 +741,32 @@ function Hud()
 	if p.potions > 0 then spr(225,8*8,0,0,1)end
 end
 
+local colors_menu = {12,12,12,13,13,13,14,14,14,15,15,15,15,0,0,0}
+local colors_menu2 = {10,10,10,9,9,9,8,8,8,15,15,15,15,0,0,0}
+local colors_menu3 = {13,13,13,13,13,14,14,14,15,15,15,15,0,0,0}
 function menuUpdate()
 	if time()>3000 then
-		cls(0)
-		printc("Who will save the princess?",120,68,11)
+		cls()
 		
-		if btnp(4)then _GAME.state = STATE_GAME end
+		printc("Who will",120,28,12,false,2)
+		printc("save",120,38,12,false,2)
+		printc("the princess?",120,48,12,false,2)
+		
+		buttonUpdate()
+		
 	else
 		local w = print("@ATS_xp",0,-6,12)
 		clip(0,0,240,136)
-		cls()
+		if time()>2000 then
+			pal(10,anim(colors_menu2,4))
+			pal(13,anim(colors_menu3,4))
+			pal(12,anim(colors_menu,4))
+		end
+		cls(0)
 		
-		for i=0,15 do pal(i,12)end
-		spr(14,(240-16*5)//2-1,28,11,5,0,0,2,2)
-		spr(14,(240-16*5)//2,28-1,11,5,0,0,2,2)
-		spr(14,(240-16*5)//2,28+1,11,5,0,0,2,2)
-		spr(14,(240-16*5)//2+1,28,11,5,0,0,2,2)
-		pal()
+		rect(0,0,240,136,10)
 		spr(14,(240-16*5)//2,28,11,5,0,0,2,2)
+		pal()
 		printb("@ATS_xp",(240-w)//2,120,0,false,1,false,12)
 		clip()
 	end
@@ -758,6 +806,8 @@ function Debug()
 		print("X: "..p.x,0,0,12,false,1,true)
 		print("Y: "..p.y,0,10,12,false,1,true)
 		print("Hp: "..p.hp,0,20,12,false,1,true)
+		print("Speed: "..p.speed,0,30,12,false,1,true)
+		print("Boost: "..p.boost,0,40,12,false,1,true)
 		print("MapX: "..mx,200,0,12,false,1,true)
 		print("MapY: "..my,200,10,12,false,1,true)
 		print("Mobs: "..#mobs,0,80,12,false,1,true)
@@ -802,6 +852,29 @@ function init()
 	dialog_pos = 1
 	text_pos = 1
 	dix,diy = 0,60
+	
+	menu_state = 1
+	butn = 
+	{
+		{
+			id = 1,
+			str = "Play",
+			x = 120,
+			y = 78,
+			on = function(s)
+				_GAME.state = STATE_GAME
+			end
+		},
+		{
+			id = 2,
+			str = "Exit",
+			x = 120,
+			y = 88,
+			on = function(s)
+				exit()
+			end
+		}
+	}
 	
 	mx,my = 0,0
 	spawnMobs()
