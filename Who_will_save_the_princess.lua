@@ -169,6 +169,17 @@ function updateParts()
 	end
 end
 
+function bulletDraw()
+	for _,v in ipairs(bullet)do
+		if bChange then
+			sprc(273,v.x,v.y,11,1,v.f,v.r)
+		end
+		if not bChange then
+			sprc(272,v.x,v.y,11,1,v.f,v.r)
+		end
+	end	
+end
+
 function bulletUpdate()
 	for i,v in ipairs(bullet)do
 		addParts({x = v.x+(v.vx<0 and 8 or 0),y = v.y+4,c = math.random(1,3),max = 10})
@@ -178,8 +189,8 @@ function bulletUpdate()
 		local w = v.w
 		local h = v.h
 		if 
-			sol(x,y+(h/2))or 
-			sol(x+(w-1),y+(h/2))or 
+			sol(x,y+(h/2+1))or 
+			sol(x+(w-1),y+(h/2+1))or 
 			sol(x,y+(h-1))or
 			sol(x+(w-1),y+(h-1))then
 			local oldx,oldy = v.x,v.y
@@ -198,12 +209,6 @@ function bulletUpdate()
 		
 		v.x = v.x + v.vx
 		v.y = v.y + v.vy
-		if bChange then
-			sprc(273,v.x,v.y,11,1,v.f,v.r)
-		end
-		if not bChange then
-			sprc(272,v.x,v.y,11,1,v.f,v.r)
-		end
 	end	
 end
 
@@ -238,23 +243,29 @@ function Mob(x,y)
 		local dy = y1 - s.y
 		local dst = math.sqrt((dx^2+dy^2))
 		
-		if dst > s.fov then
-			if dst <= s.range then
-				if t%2==0 then
-					if math.abs(dx) >= s.speed then 
-						s:move(dx > 0 and s.speed or - s.speed,0)
+		if  s.hitpause > 0 then
+			s.hitpause = s.hitpause - 1
+			s.hit = 0
+		else
+		
+			if dst > s.fov then
+				if dst <= s.range then
+					if t%2==0 then
+						if math.abs(dx) >= s.speed then 
+							s:move(dx > 0 and s.speed or - s.speed,0)
+						end
+						if math.abs(dy) >= s.speed then 
+							s:move(0,dy > 0 and s.speed or - s.speed)
+						end
 					end
-					if math.abs(dy) >= s.speed then 
-						s:move(0,dy > 0 and s.speed or - s.speed)
-					end
+				else
+					s.vx,s.vy = 0,0
 				end
 			else
 				s.vx,s.vy = 0,0
 			end
-		else
-			s.vx,s.vy = 0,0
-		end
 		
+		end
 	end
 	
 	function s.move(s,dx,dy)
@@ -266,9 +277,9 @@ function Mob(x,y)
 		local w = s.w
 		local h = s.h
 		if 
-			sol(x,y+(h/2))or 
-			sol(x+(w-1),y+(h/2))or 
-			sol(x,y+(h-1))or
+			sol(x+1,y+((h/2)+1))or 
+			sol(x+(w-1),y+((h/2)+1))or 
+			sol(x+1,y+(h-1))or
 			sol(x+(w-1),y+(h-1))then
 			s.vx,s.vy = 0,0
 		end
@@ -298,6 +309,7 @@ function Mob(x,y)
 		if s.type == "enemy" then
 			if s.die then return end
 			
+			if s.vx ~= 0 then s.f = s.vx < 0 and 1 or 0 end
 			if s.hit > 0 then s.hit = s.hit - 1 end
 			if s.hitpause <= 0 then s.atk = false end
 			
@@ -320,11 +332,10 @@ function Mob(x,y)
 				end
 			end
 			
-			if s.vx ~= 0 then s.f = s.vx < 0 and 1 or 0 end
 			if s.vx ~= 0 or s.vy ~= 0 then s.sp = anim(s.anims.walk)
 			elseif s.vx == 0 and s.vy == 0 then  s.sp = anim(s.anims.idle) end
 			if s.hp <= 0 then s.die = true s.sp = anim(s.anims.die) s.hit = 0
-			elseif s.atk then s.sp = anim(s.anims.atk,4)end
+			elseif s.atk then s.sp = anim(s.anims.atk,16)end
 			
 			if s.die then
 				for i=0,4 do
@@ -360,7 +371,7 @@ function Goblin(x,y)
 		die = {309},
 		atk = {307,308}
 	}
-	s.dmg = 2
+	s.dmg = math.random(2,6)
 	s.range = 50
 	s.speed = 1
 	s.supUpdate = s.update
@@ -415,10 +426,14 @@ function Player(x,y)
 	local s = Mob(x,y)
 	s.type = "hero"
 	s.name = "princess"
+	s.money = 0
 	s.maxHp = 50
 	s.hp = s.maxHp
+	s.keys = 0
 	s.potions = 0
 	s.boost = 0
+	s.ma = false -- "Multiplied Arrows" Power Up
+	s.da = false -- "Diamond Arrows" Power Up
 	s.sp = 256
 	s.c = 11
 	s.dmg = 2
@@ -478,7 +493,7 @@ function Player(x,y)
 		if btnp(4)then Interact(s) end -- interacts with NPCs
 		if btnp(5)then s:onPotion()end -- Use Potion
 		if (btn(6) and bullet_timer < 0 ) then  -- shoot
-			bullet_timer = 30
+			bullet_timer = bmax_timer
 			table.insert(bullet,{sp = 272,x = s.x,y = s.y,vx = bvx*2,vy = bvy*2,f = bf,r = br,w = 8,h = 8})
 		end
 		if s.hp <= 0 then s.die = true s.hit = 0 end
@@ -512,9 +527,9 @@ function NPC(sp,dialogs)
 			end
 			
 			if INTERACTS:contains(s.sp) then s.over = true end
-			if not over and BOARD:contains(s.sp) then
+			--[[if not over and BOARD:contains(s.sp) then
 				sprc(270,s.x,s.y+3,0,1)
-			end
+			end]]
 			sprc(s.sp,s.x,s.y,s.c,1,s.f)
 			if not s.over then
 				s.dcolor = 12
@@ -545,6 +560,9 @@ function Item(x,y)
 	function s.update(s)
 		if s.pickUp then return end
 		
+		if s.name ~= "chest" then 
+		s.dy = math.cos(t/16)*2 end
+		
 		if col2(p,s)then
 			s:onPickUp()
 			s.pickUp = true
@@ -553,8 +571,39 @@ function Item(x,y)
 
 	function s.draw(s)
 		if not s.pickUp then
+			sprc(271,s.x,s.y+7,0,1)
 			sprc(s.sp,s.x,s.y+s.dy,s.c,1)
 		end
+	end
+	return s
+end
+
+function Coin(x,y)
+	local s = Item(x,y)
+	s.name = "coin"
+	s.sp = 241
+	s.c = 0
+	s.supUpdate = s.update
+	
+	function s.onPickUp(s)
+		p.money = p.money + math.random(5,10)
+	end
+	function s.update(s)
+		s:supUpdate()
+		s.sp = anim({241,459,459})
+	end
+	return s
+end
+
+function coinExchange(x,y)
+	local s = Item(x,y)
+	s.name = "ce"
+	s.sp = 242
+	s.c = 0
+	s.supUpdate = s.update
+	
+	function s.onPickUp(s)
+		p.money = p.money + math.random(20,50)
 	end
 	return s
 end
@@ -562,7 +611,6 @@ end
 function Potion(x,y)
 	local s = Item(x,y)
 	s.name = "potion"
-	s.supUpdate = s.update
 	s.sp = 225
 	s.c = 0
 	
@@ -570,27 +618,46 @@ function Potion(x,y)
 		p.potions = p.potions + 1
 		addDialog({"You got a POTION!"},2)
 	end
-	function s.update(s)
-		s:supUpdate()
-		s.dy = math.cos(t/16)*2
-	end
-	
 	return s
 end
 
 function Boost(x,y)
 	local s = Item(x,y)
+	s.name = "boost"
 	s.sp = 226
 	s.c = 0
-	s.supUpdate = s.update
 	
 	function s.onPickUp(s)
-		addDialog({"You got a Boost"},4)
+		addDialog({"You got a \"Boost\"","You can run faster for a limited time."},4)
 		p.boost = 500
 	end
-	function s.update(s)
-		s:supUpdate()
-		s.dy = math.cos(t/16)*2
+	return s
+end
+
+function diamondArrow(x,y)
+	local s = Item(x,y)
+	s.name = "da"
+	s.sp = 228
+	s.c = 0
+	
+	function s.onPickUp(s)
+		addDialog({"You got Diamond Arrow!","Now your arrow is stronger!!"},10)
+		p.dmg = math.random(5,10)
+		p.da = true
+	end
+	return s
+end
+
+function multipleArrows(x,y)
+	local s = Item(x,y)
+	s.name = "ma"
+	s.sp = 227
+	s.c = 0
+	
+	function s.onPickUp(s)
+		addDialog({"You got \"Multiplied Arrows!\"","Now you can shoot more arrows than\nbefore!!"},7)
+		bmax_timer = 10
+		p.ma = true
 	end
 	return s
 end
@@ -603,15 +670,21 @@ function Chest(x,y)
 	s.c = 0
 	s.open = false
 	function s.update(s)
-		if s.open then return end
+		if s.open then return end	
+		for _,m in ipairs(mobs)do if m.type == "enemy" and col2(m,s)then s.collide = false else s.collide = true end end
+		
 		for _,v in ipairs(bullet)do
-			if col2(v,s)then
+			if col(v.x-1,v.y,v.w+2,v.h,s.x-2,s.y,s.w+4,s.h+2)then
 				s.open = true
 				if math.random(1,6) == 1 then
-					table.insert(mobs,Potion(s.x,s.y))
+					table.insert(mobs,Potion(s.x,s.y+2))
 				elseif math.random(1,6) == 2 then
+					table.insert(mobs,Coin(s.x,s.y+2))
+				elseif math.random(1,6) == 3 then
+					table.insert(mobs,coinExchange(s.x,s.y+2))
+				elseif math.random(1,6) == 5 then
 					addDialog({"Watch out! A bat!!!"})
-					table.insert(mobs,Bat(s.x,s.y+8))
+					table.insert(mobs,Bat(s.x,s.y+1))
 				else
 					addDialog({"There's nothing..." ,"Good luck next time."})
 				end
@@ -621,8 +694,47 @@ function Chest(x,y)
 	end
 	
 	function s.draw(s)
+		sprc(271,s.x,s.y,0,1)
 		if not s.open then sprc(s.sp,s.x,s.y,s.c,1)
 		else sprc(240,s.x,s.y,s.c,1)end
+		--rectb(s.x-mx-2,s.y-my,s.w+4,s.h+2,12)
+	end
+	return s
+end
+
+function Key(x,y)
+	local s = Item(x,y)
+	s.name = "key"
+	s.sp = 243
+	s.c = 0
+	
+	function s.onPickUp(s)
+		addDialog({"You found a key!","Use it to unlock doors."},3)
+		p.keys = p.keys + 1
+	end
+	return s
+end
+
+function Door(x,y)
+	local s = Mob(x,y)
+	s.type = "tile"
+	s.name = "door"
+	s.sp = 244
+	s.collide = true
+	s.open = false
+	
+	function s.onInteract(s)
+		if btnp(4)and p.keys > 0 then
+			s.open = true
+			s.collide = false
+		end
+	end
+	function s.draw(s)
+		if not s.open then
+			sprc(s.sp,s.x,s.y,15,1)
+		else
+			sprc(245,s.x,s.y,15,1)
+		end
 	end
 	return s
 end
@@ -654,11 +766,17 @@ spawntiles[193] = Bat
 spawntiles[160] = Wall(446)
 spawntiles[161] = Wall(447)
 spawntiles[128] = Wall(128)
+spawntiles[244] = Door
 
 -- Items
+spawntiles[241] = Coin
+spawntiles[242] = coinExchange
 spawntiles[224] = Chest
 spawntiles[225] = Potion
 spawntiles[226] = Boost
+spawntiles[227] = multipleArrows
+spawntiles[228] = diamondArrow
+spawntiles[243] = Key
 
 -- NPCs
 -- Scavenger
@@ -704,6 +822,27 @@ function spawnMobs()
 end
 
 function buttonUpdate()
+	butn = 
+	{
+		{
+			id = 1,
+			str = "Play",
+			x = 120,
+			y = 78,
+			on = function(s)
+				_GAME.state = STATE_GAME
+			end
+		},
+		{
+			id = 2,
+			str = "Exit",
+			x = 120,
+			y = 88,
+			on = function(s)
+				exit()
+			end
+		}
+	}
 	for i,s in ipairs(butn)do
 		
 		if btnp(0) and menu_state > 1 then
@@ -739,6 +878,10 @@ function Hud()
 		spr(503,8*i+8,0,0,1)
 	end
 	if p.potions > 0 then spr(225,8*8,0,0,1)end
+	if p.boost > 0 then spr(226,8*9,0,0,1)end
+	if p.ma then spr(227,8*10,1,0,1) end
+	if p.da then spr(228,8*11,1,0,1) end
+	printb("$"..p.money,210,136-5,4)
 end
 
 local colors_menu = {12,12,12,13,13,13,14,14,14,15,15,15,15,0,0,0}
@@ -777,13 +920,9 @@ function gameUpdate()
 		global_hitpause = global_hitpause - 1
 	else
 		for _,m in ipairs(mobs)do
-			if m.hitpause > 0 then
-				m.hitpause = m.hitpause - 1
-				m.hit = 0
-			else
-				m:update()
-			end
+			m:update()
 		end
+		bulletUpdate()
 		updateParts()
 	end
 	
@@ -796,24 +935,33 @@ function gameUpdate()
 		m:draw()
 	end
 	drawParts()
+	bulletDraw()
 	updateDialog()
-	bulletUpdate()
 	Hud()
 end
 
 function Debug()
+		text_debug = 
+	{
+		[1] = {
+			{str = "X: "..p.x},
+			{str = "Y: "..p.y},
+			{str = "Hp: "..p.hp},
+			{str = "Speed: "..p.speed},
+			{str = "Boost: "..p.boost},
+			{str = "MapX: "..mx},
+			{str = "MapY: "..my},
+			{str = "Mobs: "..#mobs},
+			{str = "Bullets: "..#bullet},
+			{str = "Particles: "..#parts},
+			{str = "Debug Mode: "..tostring(STATE_DEBUG)},
+		},
+	}
+	
 	if _GAME.on then
-		print("X: "..p.x,0,0,12,false,1,true)
-		print("Y: "..p.y,0,10,12,false,1,true)
-		print("Hp: "..p.hp,0,20,12,false,1,true)
-		print("Speed: "..p.speed,0,30,12,false,1,true)
-		print("Boost: "..p.boost,0,40,12,false,1,true)
-		print("MapX: "..mx,200,0,12,false,1,true)
-		print("MapY: "..my,200,10,12,false,1,true)
-		print("Mobs: "..#mobs,0,80,12,false,1,true)
-		print("Bullets: "..#bullet,0,90,12,false,1,true)
-		print("Particles: "..#parts,0,100,12,false,1,true)
-		print("Debug Mode: "..tostring(STATE_DEBUG),0,130,12,false,1,true)
+		for i=1,#text_debug[1] do
+			print(text_debug[1][i].str,0,8*i+5,12,false,1,true)
+		end
 		if btnp(4)and btnp(5)then STATE_DEBUG = not STATE_DEBUG end
 	end
 end
@@ -840,7 +988,8 @@ function init()
 	
 	p = Player(7*8,9*8)
 	bullet = {}
-	bullet_timer = 30
+	bmax_timer = 30
+	bullet_timer = bmax_timer
 	bChange = false
 	bvx,bvy = 2,0
 	bf,br = 0,0
@@ -854,27 +1003,6 @@ function init()
 	dix,diy = 0,60
 	
 	menu_state = 1
-	butn = 
-	{
-		{
-			id = 1,
-			str = "Play",
-			x = 120,
-			y = 78,
-			on = function(s)
-				_GAME.state = STATE_GAME
-			end
-		},
-		{
-			id = 2,
-			str = "Exit",
-			x = 120,
-			y = 88,
-			on = function(s)
-				exit()
-			end
-		}
-	}
 	
 	mx,my = 0,0
 	spawnMobs()
