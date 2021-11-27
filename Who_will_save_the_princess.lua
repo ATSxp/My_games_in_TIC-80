@@ -7,7 +7,7 @@ t=0
 
 _GAME = {
 	on = false,
-	state = 	1,
+	state = 	0,
 }
 
 local SPAWN_FLOOR = 16
@@ -182,7 +182,7 @@ end
 
 function bulletUpdate()
 	for i,v in ipairs(bullet)do
-		addParts({x = v.x+(v.vx<0 and 8 or 0),y = v.y+4,c = math.random(1,3),max = 10})
+		addParts({x = v.x+(v.vx<0 and 8 or 0),y = v.y+4,c = p.da and  math.random(8,10)or math.random(1,3),max = 10})
 		
 		local x = v.x + v.vx
 		local y = v.y + v.vy
@@ -194,7 +194,8 @@ function bulletUpdate()
 			sol(x,y+(h-1))or
 			sol(x+(w-1),y+(h-1))then
 			local oldx,oldy = v.x,v.y
-			addParts({x = oldx,y = oldy,s = math.random(2,5),c = math.random(13,15),vx = math.random(-1,1),vy = math.random(-1,1)})
+			addParts({x = oldx,y = oldy,s = math.random(2,5),c = math.random(14,15),vx = math.random(-1,1),vy = math.random(-1,1)})
+			addParts({x = oldx,y = oldy,c = 1,vy = 1,w = math.random(1,4),h = math.random(1,4),mode = 2})
 			table.remove(bullet,i)
 		end
 		
@@ -298,9 +299,13 @@ function Mob(x,y)
 	
 	function s.attack(s)
 		if not s.atk and not s.die then
-			p:damage(s.dmg)
+			if p.shield <= 0 then 
+				p:damage(s.dmg)
+				addParts({x = p.x,y = p.y,c = 2,vx = math.cos(t),vy = math.sin(t)})
+			else
+				addParts({x = p.x,y = p.y,c = 11,vx = math.cos(t),vy = math.sin(t)})
+			end
 			s.hitpause = 40
-			addParts({x = p.x,y = p.y,c = 2,vx = math.cos(t),vy = math.sin(t)})
 			s.atk = true
 		end
 	end
@@ -341,7 +346,9 @@ function Mob(x,y)
 				for i=0,4 do
 					addParts({x = 2*i+s.x,y = s.y,c = 1,vy = - math.random(1,2)/2})
 				end
+				table.insert(mobs,Coin(s.x,s.y))
 			end
+			
 		end
 	end
 	
@@ -390,7 +397,6 @@ function Bat(x,y)
 	local s = Mob(x,y)
 	s.type = "enemy"
 	s.name = "bat"
-	s.hp = math.random(5,8)
 	s.sp = 320
 	s.c = 11
 	s.dy = 0
@@ -400,6 +406,7 @@ function Bat(x,y)
 		die = {323},
 		atk = {322},
 	}
+	s.hp = math.random(5,8)
 	s.range = 60
 	s.speed = 0.5
 	s.dmg = math.random(1,3)
@@ -422,6 +429,34 @@ function Bat(x,y)
 	return s
 end
 
+function Skeleton(x,y)
+	local s = Mob(x,y)
+	s.type = "enemy"
+	s.name = "skeleton"
+	s.sp = 336
+	s.c = 11
+	s.anims = {
+		idle = {336},
+		walk = {337,338},
+		atk = {339,340},
+		die = {341},
+	}
+	s.hp = 20
+	s.speed = 0.5
+	s.range = 20
+	s.dmg = 10
+	s.supUpdate = s.update
+	
+	function s.update(s)
+		s:supUpdate()	
+		if not s.die then			
+			s:seePlayer(p.x,p.y)
+		end
+	end
+	
+	return s
+end
+
 function Player(x,y)
 	local s = Mob(x,y)
 	s.type = "hero"
@@ -434,6 +469,7 @@ function Player(x,y)
 	s.boost = 0
 	s.ma = false -- "Multiplied Arrows" Power Up
 	s.da = false -- "Diamond Arrows" Power Up
+	s.shield = 0
 	s.sp = 256
 	s.c = 11
 	s.dmg = 2
@@ -474,6 +510,7 @@ function Player(x,y)
 		s.vy = 0
 		bullet_timer = bullet_timer - 1
 		if s.hit > 0 then s.hit = s.hit - 1 end
+		if s.shield > 0 then s.shield = s.shield - 1 end
 		if s.boost > 0 then s.boost = s.boost - 1 s.speed = 2 
 		else s.speed = 1 end
 		
@@ -500,6 +537,18 @@ function Player(x,y)
 		
 		s:cam()
 		s:anim()
+	end
+	
+	function s.draw(s)
+		if s.hit > 0 then
+			for i=0,15 do
+				pal(i,12)
+			end
+		end
+		sprc(271,s.x,s.y+3,0,1)
+		sprc(s.sp,s.x,s.y,s.c,1,s.f)
+		pal()
+		if s.shield > 0 then circb(s.x-mx+4,s.y-my+4,5,11)end
 	end
 	return s
 end
@@ -662,6 +711,19 @@ function multipleArrows(x,y)
 	return s
 end
 
+function magicShield(x,y)
+	local s = Item(x,y)
+	s.name = "shield"
+	s.sp = 229
+	s.c = 0
+	
+	function s.onPickUp(s)
+		addDialog({"You got \"Magic Shield\""},11)
+		p.shield = 1000
+	end
+	return s
+end
+
 function Chest(x,y)
 	local s = Item(x,y)
 	s.name = "chest"
@@ -725,8 +787,12 @@ function Door(x,y)
 	
 	function s.onInteract(s)
 		if btnp(4)and p.keys > 0 then
+			addDialog({"Unlocked"},14)
 			s.open = true
 			s.collide = false
+			p.keys = p.keys - 1
+		else
+			addDialog({"Locked"},14)
 		end
 	end
 	function s.draw(s)
@@ -762,6 +828,7 @@ spawntiles = {}
 -- Mobs
 spawntiles[192] = Goblin
 spawntiles[193] = Bat
+spawntiles[194] = Skeleton
 
 spawntiles[160] = Wall(446)
 spawntiles[161] = Wall(447)
@@ -777,6 +844,7 @@ spawntiles[226] = Boost
 spawntiles[227] = multipleArrows
 spawntiles[228] = diamondArrow
 spawntiles[243] = Key
+spawntiles[229] = magicShield
 
 -- NPCs
 -- Scavenger
@@ -835,27 +903,37 @@ function buttonUpdate()
 		},
 		{
 			id = 2,
-			str = "Exit",
+			str = "Options",
 			x = 120,
 			y = 88,
 			on = function(s)
+				_GAME.state = STATE_OPTION
+			end,
+		},
+		{
+			id = 3,
+			str = "Exit",
+			x = 120,
+			y = 98,
+			on = function(s)
 				exit()
 			end
-		}
+		},
 	}
-	for i,s in ipairs(butn)do
-		
-		if btnp(0) and menu_state > 1 then
+	
+	if btnp(0) and menu_state > 1 then
 			menu_state = menu_state - 1
-		elseif btnp(1) and menu_state < i then
+		elseif btnp(1) and menu_state < #butn then
 			menu_state = menu_state + 1
-		elseif btnp(4)and s.id == menu_state then
-			s:on()
 		end
 		
+	for i,s in ipairs(butn)do
 		local w = print(s.str,0,-6,12)
+		if btnp(4)and s.id == menu_state then
+			s:on()
+		end
 		if s.id == menu_state then
-			printb("<",s.x+w,s.y,12)
+			printb("<",s.x+(w-8),s.y,12)
 		end
 		printc(s.str,s.x,s.y,12)
 	end
@@ -882,6 +960,10 @@ function Hud()
 	if p.ma then spr(227,8*10,1,0,1) end
 	if p.da then spr(228,8*11,1,0,1) end
 	printb("$"..p.money,210,136-5,4)
+	if p.keys > 0 then
+		spr(243,1,10,0,1)
+		printb(p.keys,2+8,11,12)
+	end
 end
 
 local colors_menu = {12,12,12,13,13,13,14,14,14,15,15,15,15,0,0,0}
@@ -936,8 +1018,12 @@ function gameUpdate()
 	end
 	drawParts()
 	bulletDraw()
-	updateDialog()
 	Hud()
+	updateDialog()
+end
+
+function optionUpdate()
+	cls()
 end
 
 function Debug()
@@ -980,6 +1066,7 @@ end
 function init()
 	STATE_MENU = 0
 	STATE_GAME = 1
+	STATE_OPTION = 2
 	STATE_DEBUG = false
 	
 	global_hitpause = 0
@@ -1016,6 +1103,8 @@ function TIC()
 		gameUpdate()
 		Debug()
 		debugMode()
+	elseif _GAME.state == STATE_OPTION then
+		optionUpdate()
 	end
 	t=t+1
 end
