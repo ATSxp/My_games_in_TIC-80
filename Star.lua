@@ -120,9 +120,16 @@ function game_over()
 	if timeShowText<0 then
 	 music()
 		sfx(5,"B-1",30)
-		print("Press B to reset",(240-w)//2,88,2)
-	 if btnp(5)then
-			init()
+		if gamePad then
+			print("Press B to reset",(240-w)//2,88,2)
+			if btnp(5)then
+				init()
+			end
+		else
+			print("Press I to reset",(240-w)//2,88,2)
+			if keyp(9)then
+				init()
+			end
 		end
 	end
 end
@@ -217,24 +224,36 @@ function Player()
 	end
 	
 	function p:Cam()
-		if self.x>120 and self.x<225*8 then
-			mx=self.x-120
-		end
-		if self.y>88 and self.y<136*8 then
-		 my=self.y-88
-		end
+		mx=math.floor(self.x)-120
+		my=math.floor(self.y)-88
+		if mx < 0 then mx = 0 
+		elseif mx > 240*8 then mx = 240 end
+		if my < 0 then my = 0 
+		elseif my > 136*8 then my = 136 end
 	end
 	
 	function p:Upd()
 	 if not txt.on then
-			if btn(2)then self.vx=-1-self.extraVel boom_dir=1
-			elseif btn(3)then self.vx=1+self.extraVel boom_dir=2
-			else self.vx=0 end
-			if btnp(4)and self.vy==0 then sfx(4,"D#4",10,0,5) self.vy=-1 if self.vx>1 or self.vx<-1 then self.vy=-1.5 end end
-			if btn(7)and self.gas>0 then sfx(3,"G#2",15,0,8)  self.vy=-rand(1,2)/2 self.gas=self.gas-(1/8) parts:new(self.x+(self.f>0 and 8 or 0),self.y+10,2,self.paletteGas[((t//8)%#self.paletteGas)+1]) end
-			if btn(5)and self.vy==0 and self.vx~=0 then self.extraVel=0.5;self.oxy=self.oxy-(0.5/8)else self.extraVel=0 end
-		 if btnp(6)then
-				if not boom then weapon() sfx(1,"A-5",20)end
+			if gamePad then
+				if btn(2)then self.vx=-1-self.extraVel boom_dir=1
+				elseif btn(3)then self.vx=1+self.extraVel boom_dir=2
+				else self.vx=0 end
+				if btnp(4)and self.vy==0 then sfx(4,"D#4",10,0,5) self.vy=-1 if self.vx>1 or self.vx<-1 then self.vy=-1.5 end end
+				if btn(7)and self.gas>0 then sfx(3,"G#2",15,0,8)  self.vy=-rand(1,2)/2 self.gas=self.gas-(1/8) parts:new(self.x+(self.f>0 and 8 or 0),self.y+10,2,self.paletteGas[((t//8)%#self.paletteGas)+1]) end
+				if btn(5)and self.vy==0 and self.vx~=0 then self.extraVel=0.5;self.oxy=self.oxy-(0.5/8)else self.extraVel=0 end
+			 if btnp(6)then
+					if not boom then weapon() sfx(1,"A-5",20)end
+				end
+			else
+				if key(1)then self.vx=-1-self.extraVel boom_dir=1
+				elseif key(4)then self.vx=1+self.extraVel boom_dir=2
+				else self.vx=0 end
+				if keyp(11)and self.vy==0 then sfx(4,"D#4",10,0,5) self.vy=-1 if self.vx>1 or self.vx<-1 then self.vy=-1.5 end end
+				if key(21)and self.gas>0 then sfx(3,"G#2",15,0,8)  self.vy=-rand(1,2)/2 self.gas=self.gas-(1/8) parts:new(self.x+(self.f>0 and 8 or 0),self.y+10,2,self.paletteGas[((t//8)%#self.paletteGas)+1]) end
+				if key(9)and self.vy==0 and self.vx~=0 then self.extraVel=0.5;self.oxy=self.oxy-(0.5/8)else self.extraVel=0 end
+			 if keyp(8)then
+					if not boom then weapon() sfx(1,"A-5",20)end
+				end
 			end
 		end
 		
@@ -404,9 +423,16 @@ function oxygen()
 			
 			if col(v.x,v.y,v.w,v.h,p.x,p.y,p.w,p.h)then
 			 spr(510,v.x-mx,(v.y-my)+((t//16)%2)-8,0,1)
-				if btnp(5)then
-				 sfx(5,"F-2",15)
-					p.oxy=50
+				if gamePad then
+					if btnp(5)then
+					 sfx(5,"F-2",15)
+						p.oxy=50
+					end
+				else
+					if keyp(9)then
+					 sfx(5,"F-2",15)
+						p.oxy=50
+					end
 				end
 			end
 		end
@@ -426,9 +452,16 @@ function gas()
 			
 			if col(v.x,v.y,v.w,v.h,p.x,p.y,p.w,p.h)then
 				spr(510,v.x-mx,(v.y-my)+((t//16)%2)-8,0,1)
-				if btnp(5)then
-					sfx(5,"B-1",20)
-					p.gas=50
+				if gamePad then
+					if btnp(5)then
+						sfx(5,"B-1",20)
+						p.gas=50
+					end
+				else
+					if keyp(9)then
+						sfx(5,"B-1",20)
+						p.gas=50
+					end
 				end
 			end
 		end
@@ -442,9 +475,16 @@ function board()
 			
 			if col(v.x,v.y,v.w,v.h,p.x,p.y,p.w,p.h)then
 				spr(510,v.x-mx,(v.y-my)+((t//16)%2)-8,0,1)
-			 if btnp(5)then
-					sfx(5,"B-1",20)
-					txt.on=not txt.on
+			 if gamePad then
+					if btnp(5)then
+						sfx(5,"B-1",20)
+						txt.on=not txt.on
+					end
+				else
+					if keyp(9)then
+						sfx(5,"B-1",20)
+						txt.on=not txt.on
+					end
 				end
 			end
 		end
@@ -483,6 +523,8 @@ function init()
 	txt.on=false
 	timeShowText=10
 	timeShowTextCard=70
+	gamePad = true
+	keyBoard = false
 	
  parts={
  	system=function(self)
@@ -575,10 +617,45 @@ function init()
 end
 
 init()
-mode="menu"
-
+mode="controls"
 function TIC()
- if mode=="menu" then
+ if mode == "controls" then
+ 	cls()
+  
+  local w = print("Choose your control",0,-6,3)
+  print("Choose your control",(240-w)//2,10,3)
+  
+  if gamePad then
+  	spr(169,(240-72)//2,50+math.cos(t/6)*2,0,1,0,0,4,4)
+   spr(172,(240-72+72)//2,50+math.sin(t/6)*2,0,1,0,0,4,4)
+   local w = print("Gamepad",0,-6,3)
+   print("Gamepad",(240-w)//2,100,3)
+  elseif keyBoard then
+  	spr(105,(240-72)//2,45+math.cos(t/6)*2,0,1,0,0,4,4)
+   spr(108,(240-72+72)//2,45+math.sin(t/6)*2,0,1,0,0,4,4)
+   local w = print("Keyboard",0,-6,3)
+   print("Keyboard",(240-w)//2,100,3)
+  end
+  
+  local x,y,p = mouse()
+  
+  if btnp(2) or btnp(3) or ((col(40,56,24,24,x,y,8,8)or col(185-15,56,24,24,x,y,8,8)) and p and (t/8)%1==0) then 
+  	gamePad = not gamePad
+   keyBoard = not keyBoard
+  end
+  
+  if gamePad then
+	  local w = print("Press A to accept",0,-6,3)
+	  print("Press A to accept",(240-w)//2,120,3)
+		else
+			local w = print("Press I to accept",0,-6,3)
+	  print("Press I to accept",(240-w)//2,120,3)
+  end
+  
+  print("<",40,60,3,false,3)
+  print(">",185,60,3,false,3)
+  if btnp(4) or keyp(9) then mode = "menu" end
+ elseif mode=="menu" then
  	cls()
   
   for i=0,29 do
@@ -589,7 +666,7 @@ function TIC()
   
   circ(120,68,50+cos((t/16)/2)*8,0)
   circ(0,108,50+cos((t/16)/2)*8,0)
-  circ(230,108,50+cos((t/16)/2)*8,0)
+  circ(240,108,50+cos((t/16)/2)*8,0)
   
   local w=print("play",0,-6,3)
   local w2=print("Star",0,-12,10,false,2)
@@ -603,9 +680,16 @@ function TIC()
   print("<",((288-w)//2)+((t/16)%2),78,1)
   print("<",((290-w)//2)+((t/16)%2),78,3)
   
-  if btnp(5)then
-   sfx(0,"D-4",5,0)
-   mode=""
+  if gamePad then
+	  if btnp(5)then
+	   sfx(0,"D-4",5,0)
+	   mode=""
+	  end
+		else
+		 if keyp(9)then
+	   sfx(0,"D-4",5,0)
+	   mode=""
+	  end
   end
  else
 		cls()
@@ -646,7 +730,7 @@ function TIC()
 		if colt(p.x,p.y,p.w,p.h,243)then
 		 spr(510,p.x-mx,(p.y-my)+((t//16)%2)-8,0,1)
 
-			if btnp(5)and p.keys==1 then
+			if (btnp(5) or keyp(9))and p.keys==1 then
 			 sfx(3,"D-4",10)
 			 mset(64,35,0)
 				mset(65,35,0)
@@ -655,7 +739,7 @@ function TIC()
 				mset(68,35,0)
 				mset(69,35,0)
 				p.keys=0
-			elseif btnp(5) and p.keys==0 then
+			elseif (btnp(5)or keyp(9)) and p.keys==0 then
 			 sfx(4,"C-1",10)
 			end
 		end
