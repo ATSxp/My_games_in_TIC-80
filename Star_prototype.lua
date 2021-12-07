@@ -1,4 +1,4 @@
--- title:  Star
+-- title:  Star-prototype
 -- author: @ATS_xp
 -- desc:   Your mission is to find a star on a dangerous planet.
 -- script: lua
