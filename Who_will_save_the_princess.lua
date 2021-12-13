@@ -7,7 +7,7 @@ t=0
 
 _GAME = {
 	on = false,
-	state = 	0,
+	state = 	1,
 }
 
 local SPAWN_FLOOR = 16
@@ -483,10 +483,13 @@ function Player(x,y)
 	end
 	
 	function s.cam(s)
-		if s.x//240*240 ~= mx or s.y//136*136 ~= my then
-			mx = s.x//240*240
-			my = s.y//136*136
-		end
+		mx = math.floor(s.x) - 120
+		my = math.floor(s.y) - 68
+		
+		if s.x < 0 then mx = 0
+		elseif s.x > 240*8 then mx = 240 end
+		if s.y < 0 then my = 0
+		elseif s.y > 136*8 then my = 136 end
 	end
 	
 	function s.anim(s)
@@ -724,6 +727,13 @@ function magicShield(x,y)
 	return s
 end
 
+chest_item = {
+	-- 1,   2,   3,           4,
+	{Potion,Coin,coinExchange,Bat},
+	-- 1, 2, 3,  4,
+	{nil,nil,nil,"Watch out! A bat!!!"}
+}
+
 function Chest(x,y)
 	local s = Item(x,y)
 	s.name = "chest"
@@ -738,18 +748,9 @@ function Chest(x,y)
 		for _,v in ipairs(bullet)do
 			if col(v.x-1,v.y,v.w+2,v.h,s.x-2,s.y,s.w+4,s.h+2)then
 				s.open = true
-				if math.random(1,6) == 1 then
-					table.insert(mobs,Potion(s.x,s.y+2))
-				elseif math.random(1,6) == 2 then
-					table.insert(mobs,Coin(s.x,s.y+2))
-				elseif math.random(1,6) == 3 then
-					table.insert(mobs,coinExchange(s.x,s.y+2))
-				elseif math.random(1,6) == 5 then
-					addDialog({"Watch out! A bat!!!"})
-					table.insert(mobs,Bat(s.x,s.y+1))
-				else
-					addDialog({"There's nothing..." ,"Good luck next time."})
-				end
+				local id = math.random(1,#chest_item[1])
+				table.insert(mobs,chest_item[1][id](s.x,s.y+2))
+				addDialog({chest_item[2][id]})
 			end
 		end
 		
@@ -1009,7 +1010,7 @@ function gameUpdate()
 	end
 	
 	cls()
-	map(mx//8,my//8,31,18)
+	map(mx//8,my//8,31,18,-(mx%8),-(my%8))
 	
 	table.sort(mobs,layer)
 	
