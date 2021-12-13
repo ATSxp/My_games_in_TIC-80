@@ -745,14 +745,14 @@ function Chest(x,y)
 		if s.open then return end	
 		for _,m in ipairs(mobs)do if m.type == "enemy" and col2(m,s)then s.collide = false else s.collide = true end end
 		
-		for _,v in ipairs(bullet)do
-			if col(v.x-1,v.y,v.w+2,v.h,s.x-2,s.y,s.w+4,s.h+2)then
-				s.open = true
-				local id = math.random(1,#chest_item[1])
-				table.insert(mobs,chest_item[1][id](s.x,s.y+2))
-				addDialog({chest_item[2][id]})
+			for _,v in ipairs(bullet)do
+				if col(v.x-1,v.y,v.w+2,v.h,s.x-2,s.y,s.w+4,s.h+2)then
+					s.open = true
+					local id = math.random(1,#chest_item[1])
+					table.insert(mobs,chest_item[1][id](s.x,s.y+2))
+					addDialog({chest_item[2][id]})
+				end
 			end
-		end
 		
 	end
 	
