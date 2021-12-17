@@ -922,10 +922,10 @@ function buttonUpdate()
 	}
 	
 	if btnp(0) and menu_state > 1 then
-			menu_state = menu_state - 1
-		elseif btnp(1) and menu_state < #butn then
-			menu_state = menu_state + 1
-		end
+		menu_state = menu_state - 1
+	elseif btnp(1) and menu_state < #butn then
+		menu_state = menu_state + 1
+	end
 		
 	for i,s in ipairs(butn)do
 		local w = print(s.str,0,-6,12)
