@@ -124,7 +124,7 @@ function updateDialog()
 		if dialog_pos <= #dialog then
 			drawTextBox()
 			printb(string.sub(str,1,text_pos),dix+10,diy+10,dialog_color,false,1)
-			spr(anim({507,508},24),dix+240-24,diy+68-34,0,2)
+			spr(anim({507,508},24),dix+240-24,diy+68-34,11,2)
 			printb(">",(dix+240-32)+((t/24)%2),diy+70-34,12,false,2,true)
 			global_hitpause = 1
 			if text_pos < len and t%4==0 then text_pos = text_pos + 1 end
@@ -151,7 +151,9 @@ function drawParts()
 	for _,v in ipairs(parts)do
 		if v.mode == 1 then
 			circ(v.x-mx,v.y-my,v.s or 1,v.c or 0)
-		else
+		elseif v.mode == 2 then
+			printb(v.text or nil,v.x-mx,v.y-my,v.c or 0,v.fix or false,v.scale or 1,v.small or false)
+		elseif v.mode == 3 then
 			rect(v.x-mx,v.y-my,v.w or 1,v.h or 1,v.c or 0)
 		end
 	end
@@ -193,9 +195,9 @@ function bulletUpdate()
 			sol(x+(w-1),y+(h/2+1))or 
 			sol(x,y+(h-1))or
 			sol(x+(w-1),y+(h-1))then
-			local oldx,oldy = v.x,v.y
-			addParts({x = oldx,y = oldy,s = math.random(2,5),c = math.random(14,15),vx = math.random(-1,1),vy = math.random(-1,1)})
-			addParts({x = oldx,y = oldy,c = 1,vy = 1,w = math.random(1,4),h = math.random(1,4),mode = 2})
+			local Oldx,Oldy = v.x,v.y
+			addParts({x = Oldx,y = Oldy,s = math.random(2,5),c = math.random(14,15),vx = math.random(-1,1),vy = math.random(-1,1)})
+			addParts({x = Oldx,y = Oldy,c = 1,vy = 1,w = math.random(1,4),h = math.random(1,4)})
 			table.remove(bullet,i)
 		end
 		
@@ -224,6 +226,8 @@ function Mob(x,y)
 	s.die = false
 	s.collide = false
 	s.atk = false
+	s.delete = false
+	s.vanish = 500
 	s.hit = 0
 	s.dmg = 0
 	s.hitpause = 0
@@ -301,6 +305,8 @@ function Mob(x,y)
 		if not s.atk and not s.die then
 			if p.shield <= 0 then 
 				p:damage(s.dmg)
+				local oldx,oldy = p.x,p.y
+				addParts({x = oldx,y = oldy,mode = 2,text = -s.dmg,vy = -0.5,vx = 0,c = 2})
 				addParts({x = p.x,y = p.y,c = 2,vx = math.cos(t),vy = math.sin(t)})
 			else
 				addParts({x = p.x,y = p.y,c = 11,vx = math.cos(t),vy = math.sin(t)})
@@ -312,9 +318,14 @@ function Mob(x,y)
 	
 	function s.update(s)
 		if s.type == "enemy" then
+		
+			if s.die then s.vanish = s.vanish - 1 end
+			if s.vanish <= 0 then s.delete = true s.vanish = 0 end
+			
 			if s.die then return end
 			
 			if s.vx ~= 0 then s.f = s.vx < 0 and 1 or 0 end
+			
 			if s.hit > 0 then s.hit = s.hit - 1 end
 			if s.hitpause <= 0 then s.atk = false end
 			
@@ -323,10 +334,10 @@ function Mob(x,y)
 				if p.x > s.x then s.f = 0 else s.f = 1 end
 				if t > s.t then
 					s:attack()
-					s.t = t + math.random(30,130)
+					s.t = t + math.random(30,90)
 				end
 			else
-				s.t = t + math.random(0,130)
+				s.t = t + math.random(0,90)
 			end
 			
 			for _,v in ipairs(bullet)do
@@ -334,6 +345,8 @@ function Mob(x,y)
 					s:damage(p.dmg)
 					table.remove(bullet,_)
 					addParts({x = s.x,y = s.y,c = 2,vx = math.cos(t),vy = math.sin(t)})
+					local oldx,oldy = s.x,s.y
+					addParts({x = oldx,y = oldy,mode = 2,text = -p.dmg,vy = -0.5,vx = 0,c = 3})
 				end
 			end
 			
@@ -346,13 +359,14 @@ function Mob(x,y)
 				for i=0,4 do
 					addParts({x = 2*i+s.x,y = s.y,c = 1,vy = - math.random(1,2)/2})
 				end
-				table.insert(mobs,Coin(s.x,s.y))
+				table.insert(mobs,chest_item[1][math.random(1,3)](s.x,s.y))
 			end
 			
 		end
 	end
 	
 	function s.draw(s)
+		if s.delete then return end
 		if s.hit > 0 then
 			for i=0,15 do
 				pal(i,12)
@@ -387,6 +401,7 @@ function Goblin(x,y)
 		s:supUpdate()	
 		if not s.die then			
 			s:seePlayer(p.x,p.y)
+			s.dmg = math.random(2,6)
 		end
 	end
 	
@@ -418,6 +433,7 @@ function Bat(x,y)
 			s:seePlayer(p.x,p.y)
 			
 			s.y = s.y + s.dy
+			s.dmg = math.random(1,3)
 			
 			if s.atk  then -- stop fly
 			else if s.vx == 0 and s.vy == 0 then s.dy = math.cos(t/16)/6 end 
@@ -521,6 +537,7 @@ function Player(x,y)
 		s.anims.atk = anim({259,260},16)
 		s.anims.idle = 256
 		s.anims.die = 261
+		s.dmg = math.random(1,8)
 		
 		if btn(0)then s:move(0,- s.speed) bvx,bvy = 0,- 2 bChange = false end -- up
 		if btn(1)then s:move(0,s.speed) bvx,bvy = 0,2 bChange = false end -- down
@@ -638,7 +655,9 @@ function Coin(x,y)
 	s.supUpdate = s.update
 	
 	function s.onPickUp(s)
-		p.money = p.money + math.random(5,10)
+		local rnd = math.random(5,10)
+		p.money = p.money + rnd
+		addParts({text = "+"..rnd,x = s.x,y = s.y,mode = 2,c = 4,small = true})
 	end
 	function s.update(s)
 		s:supUpdate()
@@ -655,7 +674,9 @@ function coinExchange(x,y)
 	s.supUpdate = s.update
 	
 	function s.onPickUp(s)
-		p.money = p.money + math.random(20,50)
+		local rnd = math.random(20,50)
+		p.money = p.money + rnd
+		addParts({text = "+"..rnd,x = s.x,y = s.y,mode = 2,c = 4})
 	end
 	return s
 end
@@ -862,7 +883,7 @@ spawntiles[208] = NPC(208,
 	}
 })
 -- Board 1
-spawntiles[216] = NPC(216,
+spawntiles[216] = NPC(460,
 {
 	{
 		"Welcome to Evil Dungeon, a dungeon with\nthe worst monsters in THE ENTIRE KINGDOM!\nPlease leave your note at the end of the\ndungeon, the Demon King thanks you."
@@ -922,18 +943,18 @@ function buttonUpdate()
 	}
 	
 	if btnp(0) and menu_state > 1 then
-		menu_state = menu_state - 1
-	elseif btnp(1) and menu_state < #butn then
-		menu_state = menu_state + 1
-	end
+			menu_state = menu_state - 1
+		elseif btnp(1) and menu_state < #butn then
+			menu_state = menu_state + 1
+		end
 		
 	for i,s in ipairs(butn)do
-		local w = print(s.str,0,-6,12)
-		if btnp(4)and s.id == menu_state then
-			s:on()
-		end
 		if s.id == menu_state then
-			printb("<",s.x+(w-8),s.y,12)
+			local w = print(s.str,0,-6,12)
+			if btnp(4) then
+				s:on()
+			end
+				printb("<",s.x+(w-8),s.y,12)
 		end
 		printc(s.str,s.x,s.y,12)
 	end
