@@ -7,7 +7,7 @@ t=0
 
 _GAME = {
 	on = false,
-	state = 	1,
+	state =	1,
 }
 
 local SPAWN_FLOOR = 16
@@ -27,9 +27,7 @@ function set(tbl)
 	return s
 end
 
-SOLID = set{1,2,3,4,35,37}
-BOARD = set{216}
-INTERACTS = set{35}
+SOLID = set{1,2,3,4,5,17,19,21,34,35,36,37}
 
 function anim(f,s)local f,s = f or {},s or 8;return f[((t//s)%#f)+1] end
 
@@ -63,9 +61,9 @@ function printb(text,x,y,c,fix,s,sm,cb)
 end
 
 -- By: Nesbox / me
-function printc(s,x,y,c,f,sc,sm)
-    local w=print(s,0,-18,c,f or false,sc or 1,sm or false)
-    printb(s,x-(w/2),y,c or 15,f or false,sc or 1,sm or false)
+function printc(s,x,y,c,f,sc,sm,cb)
+    local w=print(s,0,-18,c,f or false,sc or 1,sm or false,cb or 0)
+    printb(s,x-(w/2),y,c or 15,f or false,sc or 1,sm or false,cb or 0)
 end
 
 -- By Nesbox
@@ -83,15 +81,18 @@ function layer(a,b)
 	return a.y < b.y
 end
 
+-- If you are curious to know how this 
+-- Text Box system works, read my tutorial 
+-- here: https://github.com/nesbox/TIC-80/wiki/How-to-make-Text-box
 function addDialog(di,col)
 	dialog = di
-	dialog_color = col or 12
+	dialog_color = col or 0
 	dialog_pos = 1
 	text_pos = 1
 end
 
 function drawTextBox()
-	spr(510,dix,diy,11,1)
+	--[[spr(510,dix,diy,11,1)
 	spr(510,dix+(240-8),diy,11,1,1)
 	spr(510,dix,diy+60-12,11,1,1,2)
 	spr(510,dix+(240-8),diy+60-12,11,1,0,2)
@@ -103,7 +104,24 @@ function drawTextBox()
 		spr(511,dix,8*i+diy+8,11,1,1,1)
 		spr(511,dix+240-8,8*i+diy+8,11,1,0,1)
 	end
-	rect(8,diy+8,224,60-16,13)
+	rect(8,diy+8,224,60-16,3)--]]
+	
+	rect(dix+8,diy+1,240-16,68-1,3)
+	
+	for i = 1,29 - 1 do
+		spr(511,8*i+dix,diy,11,1)
+		spr(511,8*i+dix,diy+68-8,11,1,0,2)
+	end
+	for i = 1,(17/2) - 1 do
+		spr(511,dix,8*i+diy,11,1,1,1)
+		spr(511,dix+240-8,8*i+diy,11,1,0,1)
+	end
+	
+	spr(510,dix,diy,11,1)
+	spr(510,dix+240-8,diy,11,1,1)
+	spr(510,dix,diy+68-8,11,1,1,2)
+	spr(510,dix+240-8,diy+68-8,11,1,2,1)
+	
 end
 
 function updateDialog()
@@ -123,9 +141,10 @@ function updateDialog()
 		
 		if dialog_pos <= #dialog then
 			drawTextBox()
-			printb(string.sub(str,1,text_pos),dix+10,diy+10,dialog_color,false,1)
-			spr(anim({507,508},24),dix+240-24,diy+68-34,11,2)
-			printb(">",(dix+240-32)+((t/24)%2),diy+70-34,12,false,2,true)
+			--print(string.sub(str,1,text_pos),dix+10,diy+10,dialog_color)
+			printb(string.sub(str,1,text_pos),dix+10,diy+10,dialog_color,false,1,false,2)
+			--spr(anim({507,508},24),dix+240-24,diy+68-34,11,2)
+			spr(anim({507,508},24),dix+240-24,diy+68-22,11,2)
 			global_hitpause = 1
 			if text_pos < len and t%4==0 then text_pos = text_pos + 1 end
 		end
@@ -184,7 +203,7 @@ end
 
 function bulletUpdate()
 	for i,v in ipairs(bullet)do
-		addParts({x = v.x+(v.vx<0 and 8 or 0),y = v.y+4,c = p.da and  math.random(8,10)or math.random(1,3),max = 10})
+		--addParts({x = v.x+(v.vx<0 and 8 or 0),y = v.y+4,c = p.da and  math.random(8,10)or math.random(1,3),max = 10})
 		
 		local x = v.x + v.vx
 		local y = v.y + v.vy
@@ -196,7 +215,7 @@ function bulletUpdate()
 			sol(x,y+(h-1))or
 			sol(x+(w-1),y+(h-1))then
 			local Oldx,Oldy = v.x,v.y
-			addParts({x = Oldx,y = Oldy,s = math.random(2,5),c = math.random(14,15),vx = math.random(-1,1),vy = math.random(-1,1)})
+			addParts({x = Oldx,y = Oldy,s = math.random(2,5),c = math.random(0,2),vx = math.random(-1,1),vy = math.random(-1,1)})
 			addParts({x = Oldx,y = Oldy,c = 1,vy = 1,w = math.random(1,4),h = math.random(1,4)})
 			table.remove(bullet,i)
 		end
@@ -346,7 +365,7 @@ function Mob(x,y)
 					table.remove(bullet,_)
 					addParts({x = s.x,y = s.y,c = 2,vx = math.cos(t),vy = math.sin(t)})
 					local oldx,oldy = s.x,s.y
-					addParts({x = oldx,y = oldy,mode = 2,text = -p.dmg,vy = -0.5,vx = 0,c = 3})
+					addParts({x = oldx,y = oldy,mode = 2,text = -p.dmg,vy = -0.5,vx = 0,c = 2})
 				end
 			end
 			
@@ -499,6 +518,15 @@ function Player(x,y)
 	end
 	
 	function s.cam(s)
+		-- <Camera retro or selective>
+		local x,y = s.x//240*240,s.y//136*136
+		if x ~= mx or y ~= my then
+			mx = x
+			my = y
+		end
+		-- </Camera retro or selective>
+		
+		--[[ <Camera normal>
 		mx = math.floor(s.x) - 120
 		my = math.floor(s.y) - 68
 		
@@ -506,6 +534,7 @@ function Player(x,y)
 		elseif s.x > 240*8 then mx = 240 end
 		if s.y < 0 then my = 0
 		elseif s.y > 136*8 then my = 136 end
+		</Camera normal>--]]
 	end
 	
 	function s.anim(s)
@@ -530,6 +559,9 @@ function Player(x,y)
 		bullet_timer = bullet_timer - 1
 		if s.hit > 0 then s.hit = s.hit - 1 end
 		if s.shield > 0 then s.shield = s.shield - 1 end
+		if s.ma then bmax_timer = 10 end
+		if s.da then s.dmg = math.random(5,10) 
+		else s.dmg = math.random(1,8)end
 		if s.boost > 0 then s.boost = s.boost - 1 s.speed = 2 
 		else s.speed = 1 end
 		
@@ -537,7 +569,6 @@ function Player(x,y)
 		s.anims.atk = anim({259,260},16)
 		s.anims.idle = 256
 		s.anims.die = 261
-		s.dmg = math.random(1,8)
 		
 		if btn(0)then s:move(0,- s.speed) bvx,bvy = 0,- 2 bChange = false end -- up
 		if btn(1)then s:move(0,s.speed) bvx,bvy = 0,2 bChange = false end -- down
@@ -549,7 +580,7 @@ function Player(x,y)
 		if btn(1) and btn(3)then bvx,bvy = 2,2 bChange = true end -- down/right
 		if btnp(4)then Interact(s) end -- interacts with NPCs
 		if btnp(5)then s:onPotion()end -- Use Potion
-		if (btn(6) and bullet_timer < 0 ) then  -- shoot
+		if btn(6) and bullet_timer < 0 then  -- shoot
 			bullet_timer = bmax_timer
 			table.insert(bullet,{sp = 272,x = s.x,y = s.y,vx = bvx*2,vy = bvy*2,f = bf,r = br,w = 8,h = 8})
 		end
@@ -573,16 +604,16 @@ function Player(x,y)
 	return s
 end
 
-function NPC(sp,dialogs)
-	local function fn(x,y)
+function NPC(sp,dialogs,type)
+	local function func(x,y)
 		local s = Mob(x,y)
-		s.type = "npc"
+		s.type = type or "npc"
 		s.hp = nil
-		s.c = 0 
+		s.c = 11
 		s.sp =  sp
 		s.dpos = 0
-		s.dcolor = 12
-		s.over = sp > 208 and sp < 215
+		s.dcolor = 0
+		s.over = not type == "npc"
 		s.collide = true
 		
 		function s.onInteract(s)
@@ -591,32 +622,28 @@ function NPC(sp,dialogs)
 			s.over = true
 		end
 		function s.draw(s)
-			if s.sp > 207 and s.sp < 216 and t%30==1 then
+			if s.sp > 207 and s.sp < 216 and t%32 == 0 then
 				if p.x > s.x then s.f = 0 else s.f = 1 end
 			end
 			
-			if INTERACTS:contains(s.sp) then s.over = true end
-			--[[if not over and BOARD:contains(s.sp) then
-				sprc(270,s.x,s.y+3,0,1)
-			end]]
 			sprc(s.sp,s.x,s.y,s.c,1,s.f)
-			if not s.over then
-				s.dcolor = 12
-				sprc(anim({491,492,493,494},16),s.x+4,(s.y-10),0,1)
-			end			
-			if BOARD:contains(s.sp) then
-				s.dcolor = 4
-				s.over = true
-				local hit = col(p.x,p.y,p.w,p.h,s.x,s.y,s.w+1,s.h)
-				if hit then sprc(509,s.x,(s.y-10)+math.cos((t/16))*2,0,1)end
+			
+			if not s.over and s.type == "npc" then
+				sprc(anim({491,492,493,494},16),s.x+4,(s.y-10),11,1)
 			end
-		
+			
+			if s.type == "board" then
+				s.over = true
+				if col(p.x,p.y,p.w,p.h,s.x,s.y,s.w+1,s.h) then 
+					sprc(509,s.x,(s.y-10)+math.cos((t/16))*2,11,1)
+				end
+			end
+			
 		end
 		return s
 	end
-	return fn
+	return func
 end
--- How to use: NPC(sprite of npc,{text})
 
 function Item(x,y)
 	local s = Mob(x,y)
@@ -651,13 +678,13 @@ function Coin(x,y)
 	local s = Item(x,y)
 	s.name = "coin"
 	s.sp = 241
-	s.c = 0
+	s.c = 11
 	s.supUpdate = s.update
 	
 	function s.onPickUp(s)
 		local rnd = math.random(5,10)
 		p.money = p.money + rnd
-		addParts({text = "+"..rnd,x = s.x,y = s.y,mode = 2,c = 4,small = true})
+		addParts({text = "+"..rnd,x = s.x,y = s.y,mode = 2,c = 3,small = true})
 	end
 	function s.update(s)
 		s:supUpdate()
@@ -670,13 +697,13 @@ function coinExchange(x,y)
 	local s = Item(x,y)
 	s.name = "ce"
 	s.sp = 242
-	s.c = 0
+	s.c = 11
 	s.supUpdate = s.update
 	
 	function s.onPickUp(s)
 		local rnd = math.random(20,50)
 		p.money = p.money + rnd
-		addParts({text = "+"..rnd,x = s.x,y = s.y,mode = 2,c = 4})
+		addParts({text = "+"..rnd,x = s.x,y = s.y,mode = 2,c = 3})
 	end
 	return s
 end
@@ -685,11 +712,11 @@ function Potion(x,y)
 	local s = Item(x,y)
 	s.name = "potion"
 	s.sp = 225
-	s.c = 0
+	s.c = 11
 	
 	function s.onPickUp(s)
 		p.potions = p.potions + 1
-		addDialog({"You got a POTION!"},2)
+		addDialog({"You got a POTION!"})
 	end
 	return s
 end
@@ -698,10 +725,10 @@ function Boost(x,y)
 	local s = Item(x,y)
 	s.name = "boost"
 	s.sp = 226
-	s.c = 0
+	s.c = 11
 	
 	function s.onPickUp(s)
-		addDialog({"You got a \"Boost\"","You can run faster for a limited time."},4)
+		addDialog({"You got a \"Boost\"","You can run faster for a limited time."})
 		p.boost = 500
 	end
 	return s
@@ -711,11 +738,10 @@ function diamondArrow(x,y)
 	local s = Item(x,y)
 	s.name = "da"
 	s.sp = 228
-	s.c = 0
+	s.c = 11
 	
 	function s.onPickUp(s)
-		addDialog({"You got Diamond Arrow!","Now your arrow is stronger!!"},10)
-		p.dmg = math.random(5,10)
+		addDialog({"You got Diamond Arrow!","Now your arrow is stronger!!"})
 		p.da = true
 	end
 	return s
@@ -725,11 +751,10 @@ function multipleArrows(x,y)
 	local s = Item(x,y)
 	s.name = "ma"
 	s.sp = 227
-	s.c = 0
+	s.c = 11
 	
 	function s.onPickUp(s)
-		addDialog({"You got \"Multiplied Arrows!\"","Now you can shoot more arrows than\nbefore!!"},7)
-		bmax_timer = 10
+		addDialog({"You got \"Multiplied Arrows!\"","Now you can shoot more arrows than\nbefore!!"})
 		p.ma = true
 	end
 	return s
@@ -739,10 +764,10 @@ function magicShield(x,y)
 	local s = Item(x,y)
 	s.name = "shield"
 	s.sp = 229
-	s.c = 0
+	s.c = 11
 	
 	function s.onPickUp(s)
-		addDialog({"You got \"Magic Shield\""},11)
+		addDialog({"You got \"Magic Shield\""})
 		p.shield = 1000
 	end
 	return s
@@ -760,7 +785,7 @@ function Chest(x,y)
 	s.name = "chest"
 	s.sp = 224
 	s.collide = true
-	s.c = 0
+	s.c = 11
 	s.open = false
 	function s.update(s)
 		if s.open then return end	
@@ -789,10 +814,10 @@ function Key(x,y)
 	local s = Item(x,y)
 	s.name = "key"
 	s.sp = 243
-	s.c = 0
+	s.c = 11
 	
 	function s.onPickUp(s)
-		addDialog({"You found a key!","Use it to unlock doors."},3)
+		addDialog({"You found a key!","Use it to unlock doors."})
 		p.keys = p.keys + 1
 	end
 	return s
@@ -805,35 +830,36 @@ function Door(x,y)
 	s.sp = 244
 	s.collide = true
 	s.open = false
+	s.c = 11
 	
 	function s.onInteract(s)
 		if btnp(4)and p.keys > 0 then
-			addDialog({"Unlocked"},14)
+			addDialog({"Unlocked"})
 			s.open = true
 			s.collide = false
 			p.keys = p.keys - 1
 		else
-			addDialog({"Locked"},14)
+			addDialog({"Locked"})
 		end
 	end
 	function s.draw(s)
 		if not s.open then
-			sprc(s.sp,s.x,s.y,15,1)
+			sprc(s.sp,s.x,s.y,s.c,1)
 		else
-			sprc(245,s.x,s.y,15,1)
+			sprc(245,s.x,s.y,s.c,1)
 		end
 	end
 	return s
 end
 
 function Wall(sp)
-	local function fn(x,y)
+	local function func(x,y)
 		local s = Mob(x,y)
 		s.type = "tile"
 		s.name = "wall"
 		s.collide = true
 		s.sp = sp
-		s.c = 2
+		s.c = 11
 		
 		function s.draw(s)
 			if s.sp == 446 then s.collide = false else s.collide = true end
@@ -842,7 +868,7 @@ function Wall(sp)
 		end
 		return s
 	end
-	return fn
+	return func
 end
 
 spawntiles = {}
@@ -867,7 +893,7 @@ spawntiles[228] = diamondArrow
 spawntiles[243] = Key
 spawntiles[229] = magicShield
 
--- NPCs
+-- NPCs{
 -- Scavenger
 spawntiles[208] = NPC(208,
 {
@@ -881,21 +907,16 @@ spawntiles[208] = NPC(208,
 		"this is a beautiful story",
 		"Since you're here, I must warn you, there\nare monsters in front of this hallway,\njust be very careful with them."
 	}
-})
+},"npc")
+-- }NPCs
+
 -- Board 1
 spawntiles[216] = NPC(460,
 {
 	{
 		"Welcome to Evil Dungeon, a dungeon with\nthe worst monsters in THE ENTIRE KINGDOM!\nPlease leave your note at the end of the\ndungeon, the Demon King thanks you."
 	}
-})
--- Door locked
-spawntiles[221] = NPC(35,
-{
-	{
-		"Is locked."
-	}
-})
+},"board")
 
 function spawnMobs()
 	for x = 0,240 do
@@ -963,57 +984,48 @@ end
 function Hud()
 	if not p.die then
 		if p.hit > 0 then
-			pal(2,4)
+			pal(1,3)
 		end
-		rect(2,0,p.hp,8,2)
+		rect(2,0,p.hp,8,1)
 		pal()
-		spr(476,7*8,0,0,1)
+		spr(476,7*8,0,11,1)
 	else
-		spr(475,7*8,0,0,1)
+		spr(475,7*8,0,11,1)
 	end
-	spr(502,0,0,0,1)
-	spr(504,6*8-2,0,0,1)
+	spr(502,0,0,11,1)
+	spr(504,6*8-2,0,11,1)
 	for i = 0,4 do
-		spr(503,8*i+8,0,0,1)
+		spr(503,8*i+8,0,11,1)
 	end
-	if p.potions > 0 then spr(225,8*8,0,0,1)end
-	if p.boost > 0 then spr(226,8*9,0,0,1)end
-	if p.ma then spr(227,8*10,1,0,1) end
-	if p.da then spr(228,8*11,1,0,1) end
-	printb("$"..p.money,210,136-5,4)
+	if p.potions > 0 then spr(495,8*8,0,11,1) spr(225,8*8,0,11,1)end
+	if p.boost > 0 then spr(495,8*9,0,11,1) spr(226,8*9,0,11,1)end
+	if p.ma then spr(495,8*10,0,11,1) spr(227,8*10,1,11,1) end
+	if p.da then spr(495,8*11,0,11,1) spr(228,8*11,1,11,1) end
+	printb("$"..p.money,210,136-7,3,false,1,false,2)
 	if p.keys > 0 then
-		spr(243,1,10,0,1)
+		spr(495,1,10,11,1)
+		spr(243,1,10,11,1)
 		printb(p.keys,2+8,11,12)
 	end
 end
 
-local colors_menu = {12,12,12,13,13,13,14,14,14,15,15,15,15,0,0,0}
-local colors_menu2 = {10,10,10,9,9,9,8,8,8,15,15,15,15,0,0,0}
-local colors_menu3 = {13,13,13,13,13,14,14,14,15,15,15,15,0,0,0}
 function menuUpdate()
 	if time()>3000 then
-		cls()
+		cls(1)
 		
-		printc("Who will",120,28,12,false,2)
-		printc("save",120,38,12,false,2)
-		printc("the princess?",120,48,12,false,2)
+		printc("Who will",120,28,0,false,2,false,3)
+		printc("save",120,38,0,false,2,false,3)
+		printc("the princess?",120,48,0,false,2,false,3)
 		
 		buttonUpdate()
 		
 	else
-		local w = print("@ATS_xp",0,-6,12)
+		local w = print("-- @ATS_xp --",0,-6,12)
 		clip(0,0,240,136)
-		if time()>2000 then
-			pal(10,anim(colors_menu2,4))
-			pal(13,anim(colors_menu3,4))
-			pal(12,anim(colors_menu,4))
-		end
 		cls(0)
 		
-		rect(0,0,240,136,10)
-		spr(14,(240-16*5)//2,28,11,5,0,0,2,2)
-		pal()
-		printb("@ATS_xp",(240-w)//2,120,0,false,1,false,12)
+		spr(14,(240 - (16 * 4))//2,30,11,4,0,0,2,2)
+		printb("-- @ATS_xp --",(240-w)//2,108,3,false,1,false,1)
 		clip()
 	end
 end
@@ -1056,6 +1068,7 @@ function Debug()
 			{str = "Hp: "..p.hp},
 			{str = "Speed: "..p.speed},
 			{str = "Boost: "..p.boost},
+			{str = "bTimer: "..bullet_timer},
 			{str = "MapX: "..mx},
 			{str = "MapY: "..my},
 			{str = "Mobs: "..#mobs},
@@ -1067,7 +1080,7 @@ function Debug()
 	
 	if _GAME.on then
 		for i=1,#text_debug[1] do
-			print(text_debug[1][i].str,0,8*i+5,12,false,1,true)
+			print(text_debug[1][i].str,0,8*i+5,4,false,1,true)
 		end
 		if btnp(4)and btnp(5)then STATE_DEBUG = not STATE_DEBUG end
 	end
