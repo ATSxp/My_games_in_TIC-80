@@ -7,7 +7,7 @@ t=0
 
 _GAME = {
 	on = false,
-	state =	1,
+	state =	0,
 }
 
 local SPAWN_FLOOR = 16
@@ -75,6 +75,7 @@ end
 function dist(x1,y1,x2,y2) return math.max(math.abs(x1-x2),math.abs(y1-y2))end
 function col(x1,y1,w1,h1,x2,y2,w2,h2)return x1<x2+w2 and y1<y2+h2 and x2<x1+w1 and y2<y1+h1 end
 function col2(a,b)if col(a.x,a.y,a.w,a.h,b.x,b.y,b.w,b.h)then return true end end
+function col3(x1,y1,w1,h1,x2,y2,w2,h2)return x1+w1>=x2 and x1<=x2+w2 and y1+h1>=y2 and y1<=y2+h2 end
 
 function layer(a,b)
 	if a.y == b.y then return b.x < a.x end
@@ -94,20 +95,6 @@ function addDialog(di,col,spr,name)
 end
 
 function drawTextBox()
-	--[[spr(510,dix,diy,11,1)
-	spr(510,dix+(240-8),diy,11,1,1)
-	spr(510,dix,diy+60-12,11,1,1,2)
-	spr(510,dix+(240-8),diy+60-12,11,1,0,2)
-	for i = 0,27 do 
-		spr(511,8*i+dix+8,diy,11,1) 
-		spr(511,8*i+dix+8,diy+60-12,11,1,0,2)
-	end
-	for i = 0,4 do
-		spr(511,dix,8*i+diy+8,11,1,1,1)
-		spr(511,dix+240-8,8*i+diy+8,11,1,0,1)
-	end
-	rect(8,diy+8,224,60-16,3)--]]
-	
 	rect(dix+8,diy+1,240-16,68-1,3)
 	
 	for i = 1,29 - 1 do
@@ -142,18 +129,26 @@ function updateDialog()
 		end
 		
 		if dialog_pos <= #dialog then
+			drawTextBox()
 			if dialog_name ~= nil then
 				-- icon
-				rect(dix,diy-32,32,32,3)
-				spr(dialog_spr,dix,diy-32,11,4)
-				rectb(dix,diy-32,32,32,2)
+				--rect(dix,diy+(diy == 68 and -32 or (8*8)+4),32,32,3)
+				for i = 0,15 do
+					pal(i,3)
+					spr(dialog_spr,(dix+2)-1,diy+(diy == 68 and -33 or (8*8)+5),11,4)
+					spr(dialog_spr,(dix+2)+1,diy+(diy == 68 and -33 or (8*8)+5),11,4)
+					spr(dialog_spr,(dix+2),diy+(diy == 68 and -33 or (8*8)+5)-1,11,4)
+					spr(dialog_spr,(dix+2),diy+(diy == 68 and -33 or (8*8)+5)+1,11,4)
+				end
+				pal()
+				spr(dialog_spr,dix+2,diy+(diy == 68 and -33 or (8*8)+5),11,4)
+				--rectb(dix,diy+(diy == 68 and -32 or (8*8)+4),32,32,2)
 				-- name 
 				local w = print(dialog_name,0,-6,0,false,1,true)
-				rect(dix+35,diy-11,w+5,11,3)
-				rectb(dix+35,diy-11,w+5,11,2)
-				printb(dialog_name,dix+38,diy-8,2,false,1,true,0)
+				--rect(dix+37,diy+(diy == 68 and -11 or (8*8)+4),w+5,11,3)
+				rectb(dix+37,diy+(diy == 68 and -11 or (8*8)+4),w+5,11,3)
+				printb(dialog_name,dix+40,diy+(diy == 68 and -8 or (8*8)+7),2,false,1,true,0)
 			end
-			drawTextBox()
 			--print(string.sub(str,1,text_pos),dix+10,diy+10,dialog_color)
 			printb(string.sub(str,1,text_pos),dix+10,diy+10,dialog_color,false,1,false,2)
 			--spr(anim({507,508},24),dix+240-24,diy+68-34,11,2)
@@ -175,6 +170,39 @@ function Interact(v)
 		hit then
 			m:onInteract()
 		end
+	end
+end
+
+-- I learned how to make this kind 
+-- of effect in the game "Antvania" created 
+-- by Muhammad Fauzan 
+-- please play Antvania, here: https://tic80.com/play?cart=2438
+function fade(mz,x,x2)
+	local f = {
+		x = x or 0,
+		x2 = x2 or 120,
+		z = mz,
+	}
+	
+	rec[#rec+1] = f
+end
+
+function drawFade()
+	for i,f in ipairs(rec)do
+		f.x = f.x + f.z
+		f.x2 = f.x2 - f.z
+		
+		rect(f.x,0,120,136,0)
+		rect(f.x2,0,120,136,0)
+		
+		for j = 0,16 do
+			spr(64,f.x+120,8*j,11,1)
+			spr(64,f.x2-8,8*j,11,1,1)
+		end
+		
+		if f.z < 0 and f.x + 128 < 0 then table.remove(rec,i)
+		elseif f.x > 0 and f.x + 128 > 128 then table.remove(rec,i)
+		else global_hitpause = 10 end
 	end
 end
 
@@ -265,8 +293,8 @@ function Mob(x,y)
 	s.die = false
 	s.collide = false
 	s.atk = false
-	s.delete = false
-	s.vanish = 500
+	s.vanish = 0
+	s.timer = 0
 	s.hit = 0
 	s.dmg = 0
 	s.hitpause = 0
@@ -358,8 +386,8 @@ function Mob(x,y)
 	function s.update(s)
 		if s.type == "enemy" then
 		
-			if s.die then s.vanish = s.vanish - 1 end
-			if s.vanish <= 0 then s.delete = true s.vanish = 0 end
+			if s.die then s.vanish = s.vanish + 1 end
+			if s.vanish > 100 then s.timer = s.timer + 1 end
 			
 			if s.die then return end
 			
@@ -398,21 +426,23 @@ function Mob(x,y)
 				for i=0,4 do
 					addParts({x = 2*i+s.x,y = s.y,c = 1,vy = - math.random(1,2)/2})
 				end
-				table.insert(mobs,chest_item[1][math.random(1,3)](s.x,s.y))
+				table.insert(mobs,chest_item[1][math.random(1,3)](s.x,s.y+4))
 			end
 			
 		end
 	end
 	
 	function s.draw(s)
-		if s.delete then return end
+		--if s.delete then return end
 		if s.hit > 0 then
 			for i=0,15 do
-				pal(i,12)
+				pal(i,2)
 			end
 		end
-		sprc(271,s.x,s.y+3,0,1)
-		sprc(s.sp,s.x,s.y,s.c,1,s.f)
+		if s.timer < 105 and (s.timer//3)%2 == 0 then
+			sprc(271,s.x,s.y+3,0,1)
+			sprc(s.sp,s.x,s.y,s.c,1,s.f)
+		end
 		pal()
 	end
 	return s
@@ -471,27 +501,22 @@ function Bat(x,y)
 		if not s.die then			
 			s:seePlayer(p.x,p.y)
 			
-			--s.y = s.y + s.dy
 			s.dmg = math.random(1,3)
-			
-			--[[if s.atk  then -- stop fly
-			else if s.vx == 0 and s.vy == 0 then s.dy = math.sin(t/4)/2 end 
-			end--]]
-			
 		end
 	end
 	
 	function s.draw(s)
-		if s.delete then return end
 		if s.hit > 0 then
 			for i=0,15 do
 				pal(i,12)
 			end
 		end
-		if not s.die then
-			sprc(271,s.x,s.y+3,0,1)
+		if s.timer < 105 and (s.timer//3)%2 == 0 then
+			if not s.die then
+				sprc(271,s.x,s.y+3,0,1)
+			end
+			sprc(s.sp,s.x,s.y-4 + (s.die and 0 or (s.atk and 0 or math.sin(t/8)*2)),s.c,1,s.f)
 		end
-		sprc(s.sp,s.x,s.y-4 + (s.die and 0 or (s.atk and 0 or math.sin(t/8)*2)),s.c,1,s.f)
 		pal()
 	end
 	
@@ -526,6 +551,34 @@ function Skeleton(x,y)
 	return s
 end
 
+function Cerberus(x,y)
+	local s = Mob(x,y)
+	s.type = "enemy"
+	s.name = "cerberus"
+	s.sp = 352
+	s.c = 11
+	s.anims = {
+		idle = {352,353},
+		walk = {354,355},
+		atk = {356,357},
+		die = {358},
+	}
+	s.hp = 10
+	s.speed = 1
+	s.range = 20
+	s.dmg = 5
+	s.supUpdate = s.update
+	
+	function s.update(s)
+		s:supUpdate()
+		if not s.die then			
+			s:seePlayer(p.x,p.y)
+		end
+	end
+	
+	return s
+end
+
 function Player(x,y)
 	local s = Mob(x,y)
 	s.type = "hero"
@@ -542,7 +595,7 @@ function Player(x,y)
 	s.sp = 256
 	s.c = 11
 	s.dmg = 2
-	s.speed = 1
+	s.speed = 0.9
 	s.supMove = s.move
 	
 	function s.move(s,dx,dy)
@@ -552,23 +605,11 @@ function Player(x,y)
 	end
 	
 	function s.cam(s)
-		-- <Camera retro or selective>
 		local x,y = s.x//240*240,s.y//136*136
 		if x ~= mx or y ~= my then
 			mx = x
 			my = y
 		end
-		-- </Camera retro or selective>
-		
-		--[[ <Camera normal>
-		mx = math.floor(s.x) - 120
-		my = math.floor(s.y) - 68
-		
-		if s.x < 0 then mx = 0
-		elseif s.x > 240*8 then mx = 240 end
-		if s.y < 0 then my = 0
-		elseif s.y > 136*8 then my = 136 end
-		</Camera normal>--]]
 	end
 	
 	function s.anim(s)
@@ -596,8 +637,8 @@ function Player(x,y)
 		if s.ma then bmax_timer = 10 end
 		if s.da then s.dmg = math.random(5,10) 
 		else s.dmg = math.random(1,8)end
-		if s.boost > 0 then s.boost = s.boost - 1 s.speed = 2 
-		else s.speed = 1 end
+		if s.boost > 0 then s.boost = s.boost - 1 s.speed = 1.6
+		else s.speed = 0.9 end
 		
 		s.anims.walk = anim({257,258})
 		s.anims.atk = anim({259,260},16)
@@ -627,7 +668,7 @@ function Player(x,y)
 	function s.draw(s)
 		if s.hit > 0 then
 			for i=0,15 do
-				pal(i,12)
+				pal(i,2)
 			end
 		end
 		sprc(271,s.x,s.y+3,0,1)
@@ -648,10 +689,10 @@ function Fairy(x,y)
 	s.fov = 23
 	s.range = 1000
 	s.timer = 100
+	s.dy = 0
+	s.canFollow = false
 	
 	function s.update(s)
-		s:seePlayer(p.x,p.y)
-		
 		if (s.vx ~= 0 or s.vy ~= 0) and t%8 == 0 then
 			addParts({mode = 5,x = s.x,y = s.y,c = 2,max = 30})
 		else
@@ -660,25 +701,33 @@ function Fairy(x,y)
 			end
 		end
 		
-		if (p.x > s.x + 40 or p.y > s.y + 40) or (p.x < s.x - 40 or p.y < s.y - 40) then
-			s.timer = s.timer - 1
-		else
-			s.timer = 100
+		if s.canFollow then
+			s:seePlayer(p.x,p.y)
+			
+			if (p.x > s.x + 40 or p.y > s.y + 40) or (p.x < s.x - 40 or p.y < s.y - 40) then
+				s.timer = s.timer - 1
+			else
+				s.timer = 100
+			end
+			
+			if	 s.timer < 0 then
+				local oldx,oldy = p.x,p.y
+				s.x = oldx - 30
+				s.y = oldy
+				addParts({x = s.x,y = s.y,s = math.random(2,4),c = 2,vy = -1})
+				s.timer = 100
+			end
 		end
 		
-		if	 s.timer < 0 then
-			local oldx,oldy = p.x,p.y
-			s.x = oldx - 30
-			s.y = oldy
-			addParts({x = s.x,y = s.y,s = math.random(2,4),c = 2,vy = -1})
-			s.timer = 100
-		end
+		s.sp = anim({274,275})
+		s.dy = math.sin((t/4)/2)
 		
+		if p.x == 5 * 8 and p.y == 73 * 8 then s.canFollow = true end
 	end
 	
 	function s.draw(s)
-		sprc(271,s.x,s.y+3,0,1)
-		sprc(anim({274,275},16),s.x,s.y + math.sin((t/4)/2)-4,s.c,1)
+		sprc(271,s.x,s.y + 3,0,1)
+		sprc(s.sp,s.x,s.y + s.dy - 4,s.c,1)
 	end
 	return s
 end
@@ -706,6 +755,12 @@ function NPC(name,sp,dialogs,type,spr)
 				if p.x > s.x then s.f = 0 else s.f = 1 end
 			end
 			
+			if s.type == "npc" or s.type == "board" then
+				s.collide = true
+			else
+				s.collide = false
+			end
+			
 			sprc(s.sp,s.x,s.y,s.c,1,s.f)
 			
 			if not s.over and s.type == "npc" then
@@ -730,6 +785,8 @@ function Item(x,y)
 	s.type = "item"
 	s.pickUp = false
 	s.collide = false
+	s.t = 0
+	s.timer = 0
 	s.c = - 1
 	s.dy = 0
 	
@@ -739,16 +796,24 @@ function Item(x,y)
 		if s.name ~= "chest" then 
 		s.dy = math.cos(t/16)*2 end
 		
+		s.timer = s.timer + 1
+		
 		if col2(p,s)then
 			s:onPickUp()
 			s.pickUp = true
+		else
+			if s.timer > 40 then
+				s.t = s.t + 1
+			end
 		end
 	end
 
 	function s.draw(s)
 		if not s.pickUp then
-			sprc(271,s.x,s.y+7,0,1)
-			sprc(s.sp,s.x,s.y+s.dy,s.c,1)
+			--if s.t < 80 and (s.t//)%2 == 0 then
+				sprc(271,s.x,s.y+7,0,1)
+				sprc(s.sp,s.x,s.y+s.dy,s.c,1)
+			--end
 		end
 	end
 	return s
@@ -848,16 +913,16 @@ function magicShield(x,y)
 	
 	function s.onPickUp(s)
 		addDialog({"You got \"Magic Shield\""})
-		p.shield = 1000
+		p.shield = 500
 	end
 	return s
 end
 
 chest_item = {
-	-- 1,   2,   3,           4,
-	{Potion,Coin,coinExchange,Bat},
-	-- 1, 2, 3,  4,
-	{nil,nil,nil,"Watch out! A bat!!!"}
+	-- 1,   2,   3,           4,  5,    6,
+	{Potion,Coin,coinExchange,Bat,Boost,magicShield},
+	-- 1, 2, 3,  4,                    5,  6,
+	{nil,nil,nil,"Watch out! A bat!!!",nil,nil}
 }
 
 function Chest(x,y)
@@ -919,7 +984,9 @@ function Door(x,y)
 			s.collide = false
 			p.keys = p.keys - 1
 		else
-			addDialog({"Locked"})
+			if not s.open then
+				addDialog({"Locked"})
+			end
 		end
 	end
 	function s.draw(s)
@@ -956,6 +1023,7 @@ spawntiles = {}
 spawntiles[192] = Goblin
 spawntiles[193] = Bat
 spawntiles[194] = Skeleton
+spawntiles[195] = Cerberus
 spawntiles[209] = Fairy
 
 spawntiles[160] = Wall(446)
@@ -992,6 +1060,13 @@ spawntiles[208] = NPC("Scavenger",208,
 -- }NPCs
 
 -- Board 1
+spawntiles[246] = NPC(nil,477,
+{
+	{
+		"leva minha fada ai mermao, namoral"
+	}
+},"note")
+
 spawntiles[216] = NPC(nil,460,
 {
 	{
@@ -1016,6 +1091,9 @@ function spawnMobs()
 			end
 		end
 	end
+end
+
+function eventsUpdate()
 end
 
 function buttonUpdate()
@@ -1053,11 +1131,15 @@ function Hud()
 	for i = 0,4 do
 		spr(503,8*i+8,0,11,1)
 	end
-	if p.potions > 0 then spr(225,8*8,0,11,1) rectb(8*8,0,8,8,3)end
-	if p.boost > 0 then spr(226,8*9,0,11,1) rectb(8*9,0,8,8,3)end
-	if p.ma then spr(227,8*10,1,11,1) rectb(8*10,0,8,8,3)end
-	if p.da then spr(228,8*11,1,11,1) rectb(8*11,0,8,8,3)end
+	
+	if p.potions > 0 then spr(225,8*8,0,11,1) printb(p.potions,8*8+2,8,3,false,1,true)end
+	if p.boost > 0 then spr(226,8*9,0,11,1) end
+	if p.ma then spr(227,8*10,1,11,1) end
+	if p.da then spr(228,8*11,1,11,1) end
+	if p.shield > 0 then spr(229,8*12,1,11,1)end
+	
 	printb("$"..p.money,210,136-7,3,false,1,false,2)
+	
 	if p.keys > 0 then
 		rect(1,10,8,8,3)
 		rectb(1,10,8,8,2)
@@ -1099,7 +1181,7 @@ function gameUpdate()
 	end
 	
 	cls()
-	map(mx//8,my//8,31,18,-(mx%8),-(my%8))
+	map(mx//8,my//8,31,18,-(mx%8),-(my%8),0)
 	
 	table.sort(mobs,layer)
 	
@@ -1110,6 +1192,8 @@ function gameUpdate()
 	bulletDraw()
 	Hud()
 	updateDialog()
+	drawFade()
+	eventsUpdate()
 end
 
 function optionUpdate()
@@ -1120,15 +1204,15 @@ function Debug()
 		text_debug = 
 	{
 		[1] = {
-			{str = "X: "..p.x},
-			{str = "Y: "..p.y},
+			{str = "X: "..math.floor(p.x)},
+			{str = "Y: "..math.floor(p.y)},
 			{str = "Hp: "..p.hp},
 			{str = "Speed: "..p.speed},
 			{str = "Boost: "..p.boost},
 			{str = "bTimer: "..bullet_timer},
 			{str = "MapX: "..mx},
 			{str = "MapY: "..my},
-			{str = "Mobs: "..#mobs},
+			--{str = "Mobs: "..#mobs},
 			{str = "Bullets: "..#bullet},
 			{str = "Particles: "..#parts},
 			{str = "Debug Mode: "..tostring(STATE_DEBUG)},
@@ -1137,20 +1221,8 @@ function Debug()
 	
 	if _GAME.on then
 		for i=1,#text_debug[1] do
-			print(text_debug[1][i].str,0,8*i+5,4,false,1,true)
+			printb(text_debug[1][i].str,0,8*i+5,9,false,1,true)
 		end
-		if btnp(4)and btnp(5)then STATE_DEBUG = not STATE_DEBUG end
-	end
-end
-
-function debugMode()
-	if STATE_DEBUG then
-		global_hitpause = 1
-		clip(5,5,230,131-5)
-		cls(0)
-		
-		rectb(5,5,230,131-5,12)
-		clip()
 	end
 end
 
@@ -1158,14 +1230,13 @@ function init()
 	STATE_MENU = 0
 	STATE_GAME = 1
 	STATE_OPTION = 2
-	STATE_DEBUG = false
 	
 	global_hitpause = 0
 	parts = {}
 	mobs = {}
+	rec = {}
 	
 	p = Player(15*8,9*8)
-	--table.insert(mobs,Fairy(15*8,11*8))
 	bullet = {}
 	bmax_timer = 30
 	bullet_timer = bmax_timer
@@ -1193,6 +1264,7 @@ function init()
 			y = 78,
 			on = function(s)
 				_GAME.state = STATE_GAME
+				fade(-1)
 			end
 		},
 		{
@@ -1226,7 +1298,6 @@ function TIC()
 	elseif _GAME.state == STATE_GAME then
 		gameUpdate()
 		Debug()
-		debugMode()
 	elseif _GAME.state == STATE_OPTION then
 		optionUpdate()
 	end
