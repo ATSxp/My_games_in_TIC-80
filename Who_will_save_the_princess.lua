@@ -177,11 +177,12 @@ end
 -- of effect in the game "Antvania" created 
 -- by Muhammad Fauzan 
 -- please play Antvania, here: https://tic80.com/play?cart=2438
-function fade(mz,x,x2)
+function fade(mz,x,x2,mode)
 	local f = {
 		x = x or 0,
 		x2 = x2 or 120,
 		z = mz,
+		mode = mode or 1,
 	}
 	
 	rec[#rec+1] = f
@@ -192,6 +193,11 @@ function drawFade()
 		f.x = f.x + f.z
 		f.x2 = f.x2 - f.z
 		
+		
+		if f.z < 0 and f.x + 128 < 0 then table.remove(rec,i)music()
+		elseif f.z > 0 and f.x + 128 > 120 then table.remove(rec,i)music()
+		else global_hitpause = 10 end
+		
 		rect(f.x,0,120,136,0)
 		rect(f.x2,0,120,136,0)
 		
@@ -200,9 +206,6 @@ function drawFade()
 			spr(64,f.x2-8,8*j,11,1,1)
 		end
 		
-		if f.z < 0 and f.x + 128 < 0 then table.remove(rec,i)
-		elseif f.x > 0 and f.x + 128 > 128 then table.remove(rec,i)
-		else global_hitpause = 10 end
 	end
 end
 
@@ -1109,9 +1112,9 @@ function buttonUpdate()
 			if btnp(4) then
 				s:on()
 			end
-				printb("<",s.x+(w-8),s.y,12)
+				printb("<",120+(w-8),8*i+70,12)
 		end
-		printc(s.str,s.x,s.y,12)
+		printc(s.str,120,8*i+70,12)
 	end
 end
 
@@ -1150,14 +1153,16 @@ end
 
 function menuUpdate()
 	if time()>3000 then
-		cls(1)
+		cls(0)
 		
-		printc("Who will",120,28,0,false,2,false,3)
-		printc("save",120,38,0,false,2,false,3)
-		printc("the princess?",120,48,0,false,2,false,3)
+		Music(0,true)
+		printc("Who will",120,28,1,false,2,false,3)
+		printc("save",120,38,1,false,2,false,3)
+		printc("the princess?",120,48,1,false,2,false,3)
 		
 		buttonUpdate()
 		
+		drawFade()
 	else
 		local w = print("-- @ATS_xp --",0,-6,12)
 		clip(0,0,240,136)
@@ -1166,6 +1171,13 @@ function menuUpdate()
 		spr(14,(240 - (16 * 4))//2,30,11,4,0,0,2,2)
 		printb("-- @ATS_xp --",(240-w)//2,108,3,false,1,false,1)
 		clip()
+	end
+end
+
+function Music(track,loop)
+	if not startMusic then
+		music(track,-1,-1,loop)
+		startMusic = true
 	end
 end
 
@@ -1201,24 +1213,6 @@ function optionUpdate()
 end
 
 function Debug()
-		text_debug = 
-	{
-		[1] = {
-			{str = "X: "..math.floor(p.x)},
-			{str = "Y: "..math.floor(p.y)},
-			{str = "Hp: "..p.hp},
-			{str = "Speed: "..p.speed},
-			{str = "Boost: "..p.boost},
-			{str = "bTimer: "..bullet_timer},
-			{str = "MapX: "..mx},
-			{str = "MapY: "..my},
-			--{str = "Mobs: "..#mobs},
-			{str = "Bullets: "..#bullet},
-			{str = "Particles: "..#parts},
-			{str = "Debug Mode: "..tostring(STATE_DEBUG)},
-		},
-	}
-	
 	if _GAME.on then
 		for i=1,#text_debug[1] do
 			printb(text_debug[1][i].str,0,8*i+5,9,false,1,true)
@@ -1230,6 +1224,7 @@ function init()
 	STATE_MENU = 0
 	STATE_GAME = 1
 	STATE_OPTION = 2
+	startMusic = false
 	
 	global_hitpause = 0
 	parts = {}
@@ -1260,8 +1255,6 @@ function init()
 		{
 			id = 1,
 			str = "Play",
-			x = 120,
-			y = 78,
 			on = function(s)
 				_GAME.state = STATE_GAME
 				fade(-1)
@@ -1270,25 +1263,39 @@ function init()
 		{
 			id = 2,
 			str = "Options",
-			x = 120,
-			y = 88,
 			on = function(s)
 				_GAME.state = STATE_OPTION
+				fade(-1)
 			end,
 		},
 		{
 			id = 3,
 			str = "Exit",
-			x = 120,
-			y = 98,
 			on = function(s)
 				exit()
+				trace("Thankyou for playing =)",5)
 			end
 		},
 	}
 	
 	mx,my = 0,0
 	spawnMobs()
+	
+	text_debug = {
+		[1] = {
+			{str = "X: "..math.floor(p.x)},
+			{str = "Y: "..math.floor(p.y)},
+			{str = "Hp: "..p.hp},
+			{str = "Speed: "..p.speed},
+			{str = "Boost: "..p.boost},
+			{str = "bTimer: "..bullet_timer},
+			{str = "MapX: "..mx},
+			{str = "MapY: "..my},
+			{str = "Bullets: "..#bullet},
+			{str = "Particles: "..#parts},
+			{str = "Debug Mode: "..tostring(STATE_DEBUG)},
+		},
+	}
 end
 
 init()
