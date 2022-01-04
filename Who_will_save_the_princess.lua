@@ -2,12 +2,15 @@
 -- author: @ATS_xp
 -- desc:   Escape from the Demon King's dungeon to freedom!
 -- script: lua
+-- saveid: o
+
+trace(string.upper("\ngame compiled\nand\nsuccessfully run"),6)
 
 t=0
 
 _GAME = {
 	on = false,
-	state =	0,
+	state =	1,
 }
 
 local SPAWN_FLOOR = 16
@@ -74,7 +77,7 @@ end
 
 function dist(x1,y1,x2,y2) return math.max(math.abs(x1-x2),math.abs(y1-y2))end
 function col(x1,y1,w1,h1,x2,y2,w2,h2)return x1<x2+w2 and y1<y2+h2 and x2<x1+w1 and y2<y1+h1 end
-function col2(a,b)if col(a.x,a.y,a.w,a.h,b.x,b.y,b.w,b.h)then return true end end
+function col2(a,b)if a ~= b and col(a.x,a.y,a.w,a.h,b.x,b.y,b.w,b.h)then return true end end
 function col3(x1,y1,w1,h1,x2,y2,w2,h2)return x1+w1>=x2 and x1<=x2+w2 and y1+h1>=y2 and y1<=y2+h2 end
 
 function layer(a,b)
@@ -209,6 +212,12 @@ function drawFade()
 	end
 end
 
+-- Particles modes:
+-- 1 - circle/fill
+-- 2 - text
+-- 3 - rectangle/fill
+-- 4 - circle/line
+-- 5 - circle/line art
 function addParts(tbl)table.insert(parts,tbl)end
 function drawParts()
 	for _,v in ipairs(parts)do
@@ -292,6 +301,7 @@ function Mob(x,y)
 	s.t = 0
 	s.hp = 1
 	s.sp = s.sp
+	s.spawntile = s.spawntile or SPAWN_FLOOR
 	s.anims = {}
 	s.die = false
 	s.collide = false
@@ -592,8 +602,8 @@ function Player(x,y)
 	s.keys = 0
 	s.potions = 0
 	s.boost = 0
-	s.ma = false -- "Multiplied Arrows" Power Up
-	s.da = false -- "Diamond Arrows" Power Up
+	s.ma = 0 -- "Multiplied Arrows" Power Up
+	s.da = 0 -- "Diamond Arrows" Power Up
 	s.shield = 0
 	s.sp = 256
 	s.c = 11
@@ -627,6 +637,8 @@ function Player(x,y)
 			s.potions = s.potions - 1
 			s.hp = s.hp + 20
 			if s.hp > s.maxHp then s.hp = s.maxHp end
+			local oldx,oldy = s.x,s.y
+			addParts({x = oldx,y = oldy,mode = 2,text = "+"..20,vy = -0.5,vx = 0,c = 2})
 		end
 	end
 	
@@ -637,8 +649,8 @@ function Player(x,y)
 		bullet_timer = bullet_timer - 1
 		if s.hit > 0 then s.hit = s.hit - 1 end
 		if s.shield > 0 then s.shield = s.shield - 1 end
-		if s.ma then bmax_timer = 10 end
-		if s.da then s.dmg = math.random(5,10) 
+		if s.ma > 0 then bmax_timer = 10 end
+		if s.da > 0 then s.dmg = math.random(5,10) 
 		else s.dmg = math.random(1,8)end
 		if s.boost > 0 then s.boost = s.boost - 1 s.speed = 1.6
 		else s.speed = 0.9 end
@@ -693,7 +705,6 @@ function Fairy(x,y)
 	s.range = 1000
 	s.timer = 100
 	s.dy = 0
-	s.canFollow = false
 	
 	function s.update(s)
 		if (s.vx ~= 0 or s.vy ~= 0) and t%8 == 0 then
@@ -704,33 +715,53 @@ function Fairy(x,y)
 			end
 		end
 		
-		if s.canFollow then
-			s:seePlayer(p.x,p.y)
-			
-			if (p.x > s.x + 40 or p.y > s.y + 40) or (p.x < s.x - 40 or p.y < s.y - 40) then
-				s.timer = s.timer - 1
-			else
-				s.timer = 100
-			end
-			
-			if	 s.timer < 0 then
-				local oldx,oldy = p.x,p.y
-				s.x = oldx - 30
-				s.y = oldy
-				addParts({x = s.x,y = s.y,s = math.random(2,4),c = 2,vy = -1})
-				s.timer = 100
-			end
+		s:seePlayer(p.x,p.y)
+		
+		if (p.x > s.x + 40 or p.y > s.y + 40) or (p.x < s.x - 40 or p.y < s.y - 40) then
+			s.timer = s.timer - 1
+		else
+			s.timer = 100
+		end
+		
+		if	 s.timer < 0 then
+			local oldx,oldy = p.x,p.y
+			s.x = oldx - 30
+			s.y = oldy
+			addParts({x = s.x,y = s.y,s = math.random(2,4),c = 2,vy = -1})
+			s.timer = 100
 		end
 		
 		s.sp = anim({274,275})
 		s.dy = math.sin((t/4)/2)
-		
-		if p.x == 5 * 8 and p.y == 73 * 8 then s.canFollow = true end
 	end
 	
 	function s.draw(s)
 		sprc(271,s.x,s.y + 3,0,1)
 		sprc(s.sp,s.x,s.y + s.dy - 4,s.c,1)
+	end
+	return s
+end
+
+function Checkpoint(x,y)
+	local s = Mob(x,y)
+	s.type = "magic"
+	s.name = "checkpoint"
+	s.spawntile = 50
+	
+	function s.update(s)
+		if col2(s,p)and btnp(4)then
+			Save()
+			addDialog({"Game Saved"})
+		end
+	end
+	
+	function s.draw(s)
+		if (t/4)%8 == 0 then
+			addParts({x = s.x+4,y = s.y,vy = - 0.5,c = 2,mode = 5,max = 80})
+		end
+		if col2(s,p)then
+			sprc(509,s.x,(s.y-10)+math.cos((t/16))*2,11,1)
+		end
 	end
 	return s
 end
@@ -813,10 +844,8 @@ function Item(x,y)
 
 	function s.draw(s)
 		if not s.pickUp then
-			--if s.t < 80 and (s.t//)%2 == 0 then
-				sprc(271,s.x,s.y+7,0,1)
-				sprc(s.sp,s.x,s.y+s.dy,s.c,1)
-			--end
+			sprc(271,s.x,s.y+4,0,1)
+			sprc(s.sp,s.x,s.y+s.dy,s.c,1)
 		end
 	end
 	return s
@@ -890,7 +919,7 @@ function diamondArrow(x,y)
 	
 	function s.onPickUp(s)
 		addDialog({"You got Diamond Arrow!","Now your arrow is stronger!!"})
-		p.da = true
+		p.da = 1
 	end
 	return s
 end
@@ -903,7 +932,7 @@ function multipleArrows(x,y)
 	
 	function s.onPickUp(s)
 		addDialog({"You got \"Multiplied Arrows!\"","Now you can shoot more arrows than\nbefore!!"})
-		p.ma = true
+		p.ma = 1
 	end
 	return s
 end
@@ -979,17 +1008,21 @@ function Door(x,y)
 	s.collide = true
 	s.open = false
 	s.c = 11
+	s.spawmtile = 1
 	
 	function s.onInteract(s)
-		if btnp(4)and p.keys > 0 then
+		if btnp(4)and p.keys > 0 and s.open == false then
 			addDialog({"Unlocked"})
 			s.open = true
-			s.collide = false
 			p.keys = p.keys - 1
 		else
 			if not s.open then
 				addDialog({"Locked"})
 			end
+		end
+		
+		if s.open == true then
+			s.collide = false
 		end
 	end
 	function s.draw(s)
@@ -1000,6 +1033,30 @@ function Door(x,y)
 		end
 	end
 	return s
+end
+
+function doorRoom(nextX,nextY)
+	local function func(x,y)
+		local s = Mob(x,y)
+		s.type = "tile"
+		s.name = "doorRoom"
+		s.c = 11
+		s.sp = 443
+		
+		function s.update(s)
+			if col2(p,s)then
+				p.x,p.y = nextX,nextY
+				fade(-2)
+			end
+		end
+		
+		function s.draw(s)
+			sprc(s.sp,s.x,s.y,s.c,1)
+		end
+		
+		return s
+	end
+	return func
 end
 
 function Wall(sp)
@@ -1033,6 +1090,8 @@ spawntiles[160] = Wall(446)
 spawntiles[161] = Wall(447)
 spawntiles[128] = Wall(128)
 spawntiles[244] = Door
+spawntiles[230] = Checkpoint
+spawntiles[232] = doorRoom(14*8,9*8)
 
 -- Items
 spawntiles[241] = Coin
@@ -1066,9 +1125,9 @@ spawntiles[208] = NPC("Scavenger",208,
 spawntiles[246] = NPC(nil,477,
 {
 	{
-		"leva minha fada ai mermao, namoral"
+		"leva minha fada ai mermao, namoral",
 	}
-},"note")
+},"board")
 
 spawntiles[216] = NPC(nil,460,
 {
@@ -1090,7 +1149,7 @@ function spawnMobs()
 			if spawn ~= nil then
 				local mob = spawn(x*8,y*8)
 				table.insert(mobs,mob)
-				mset(x,y,SPAWN_FLOOR)
+				mset(x,y,mob.spawntile)
 			end
 		end
 	end
@@ -1112,9 +1171,10 @@ function buttonUpdate()
 			if btnp(4) then
 				s:on()
 			end
-				printb("<",120+(w-8),8*i+70,12)
+				printb("<",w+4,8*i+70,3)
 		end
-		printc(s.str,120,8*i+70,12)
+		local w = print(s.str,0,-6,12)
+		printb(s.str,0,8*i+70,3,false,1,false,1)
 	end
 end
 
@@ -1137,8 +1197,8 @@ function Hud()
 	
 	if p.potions > 0 then spr(225,8*8,0,11,1) printb(p.potions,8*8+2,8,3,false,1,true)end
 	if p.boost > 0 then spr(226,8*9,0,11,1) end
-	if p.ma then spr(227,8*10,1,11,1) end
-	if p.da then spr(228,8*11,1,11,1) end
+	if p.ma > 0 then spr(227,8*10,1,11,1) end
+	if p.da > 0 then spr(228,8*11,1,11,1) end
 	if p.shield > 0 then spr(229,8*12,1,11,1)end
 	
 	printb("$"..p.money,210,136-7,3,false,1,false,2)
@@ -1156,9 +1216,9 @@ function menuUpdate()
 		cls(0)
 		
 		Music(0,true)
-		printc("Who will",120,28,1,false,2,false,3)
-		printc("save",120,38,1,false,2,false,3)
-		printc("the princess?",120,48,1,false,2,false,3)
+		printc("Who will",120+(math.cos(t/6)*2)*2,28,2,false,2)
+		printc("save",120+(math.sin(t/6)*2)*2,38,1,false,2)
+		printc("the princess?",120+(math.cos(t/6)*2)*2,48,3,false,2)
 		
 		buttonUpdate()
 		
@@ -1181,6 +1241,32 @@ function Music(track,loop)
 	end
 end
 
+function Save()	
+	local px,py = math.floor(p.x),math.floor(p.y)
+	pmem(0,px)pmem(1,py)
+	pmem(2,p.potions)pmem(3,p.money)pmem(4,p.keys)
+	pmem(5,p.boost)pmem(6,p.ma)pmem(7,p.da)pmem(8,p.shield)
+	pmem(9,p.hp)
+	p.hp = p.maxHp
+	trace("== SAVED ==",7)
+	saveIconTimer = 100
+end
+
+function Load()
+	p.x = pmem(0)
+	p.y = pmem(1)
+	p.potions = pmem(2)
+	p.money = pmem(3)
+	p.keys = pmem(4)
+	p.boost = pmem(5)
+	p.ma = pmem(6)
+	p.da = pmem(7)
+	p.shield = pmem(8)
+	p.hp = pmem(9)
+	spawnMobs()
+	trace("== LOADED ==",2)
+end
+
 function gameUpdate()
 	if global_hitpause > 0 then
 		global_hitpause = global_hitpause - 1
@@ -1190,6 +1276,8 @@ function gameUpdate()
 		end
 		bulletUpdate()
 		updateParts()
+		
+		if saveIconTimer > 0 then saveIconTimer = saveIconTimer - 1 end
 	end
 	
 	cls()
@@ -1206,6 +1294,7 @@ function gameUpdate()
 	updateDialog()
 	drawFade()
 	eventsUpdate()
+	if saveIconTimer > 0 then spr(428,240-16,5+math.cos(t/8)*2,11,2)end
 end
 
 function optionUpdate()
@@ -1225,13 +1314,15 @@ function init()
 	STATE_GAME = 1
 	STATE_OPTION = 2
 	startMusic = false
+	saved = false
+	saveIconTimer = 0
 	
 	global_hitpause = 0
 	parts = {}
 	mobs = {}
 	rec = {}
 	
-	p = Player(15*8,9*8)
+	p = Player(26*8,77*8)
 	bullet = {}
 	bmax_timer = 30
 	bullet_timer = bmax_timer
@@ -1254,31 +1345,47 @@ function init()
 	butn = {
 		{
 			id = 1,
-			str = "Play",
+			str = "New Game",
 			on = function(s)
+				pmem(0,0)
+				trace("============ GAME ============",4)
 				_GAME.state = STATE_GAME
 				fade(-1)
 			end
 		},
 		{
 			id = 2,
+			str = pmem(0) > 0 and "Load Game" or "Load Game -- Empty",
+			on = function(s)
+				if pmem(0) > 0 then
+					Load()
+					trace("============ GAME ============",4)
+					_GAME.state = STATE_GAME
+					fade(-1)
+				end
+			end
+		},
+		{
+			id = 3,
 			str = "Options",
 			on = function(s)
+				trace("============ OPTIONS ============",4)
 				_GAME.state = STATE_OPTION
 				fade(-1)
 			end,
 		},
 		{
-			id = 3,
+			id = 4,
 			str = "Exit",
 			on = function(s)
+				trace("============ EXIT ============",4)
 				exit()
 				trace("Thankyou for playing =)",5)
 			end
 		},
 	}
 	
-	mx,my = 0,0
+	mx,my = p.x//240*240,p.y//136*136
 	spawnMobs()
 	
 	text_debug = {
