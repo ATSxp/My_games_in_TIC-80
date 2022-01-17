@@ -30,7 +30,9 @@ function set(tbl)
 	return s
 end
 
-SOLID = set{1,2,3,4,5,17,19,21,34,35,36,37}
+SOLID = set{1,2,3,4,5,17,19,21,34,35,36,37,45,46,47,
+61,62,63,77,78,79,92,93,94,95,108,109,110,111,124,125,
+126,127,140,141,142,143}
 
 function anim(f,s)local f,s = f or {},s or 8;return f[((t//s)%#f)+1] end
 
@@ -725,7 +727,7 @@ function Fairy(x,y)
 		
 		if	 s.timer < 0 then
 			local oldx,oldy = p.x,p.y
-			s.x = oldx - 30
+			s.x = oldx + (math.random(-15,15))
 			s.y = oldy
 			addParts({x = s.x,y = s.y,s = math.random(2,4),c = 2,vy = -1})
 			s.timer = 100
@@ -766,7 +768,7 @@ function Checkpoint(x,y)
 	return s
 end
 
-function NPC(name,sp,dialogs,type)
+function NPC(name,sp,dialogs,type,spawn)
 	local function func(x,y)
 		local s = Mob(x,y)
 		s.type = type or "npc"
@@ -778,6 +780,7 @@ function NPC(name,sp,dialogs,type)
 		s.dcolor = 0
 		s.over = not type == "npc"
 		s.collide = true
+		s.spawntile = spawn or 16
 		
 		function s.onInteract(s)
 			s.dpos = (s.dpos%#dialogs)+1
@@ -790,7 +793,7 @@ function NPC(name,sp,dialogs,type)
 			end		
 			sprc(271,s.x,s.y+2,0,1)
 			
-			if s.type == "npc" or s.type == "board" then
+			if s.type == "npc" or s.type == "board" or s.type == "dummy"then
 				s.collide = true
 			else
 				s.collide = false
@@ -1009,7 +1012,7 @@ function Door(x,y)
 	s.collide = true
 	s.open = false
 	s.c = 11
-	s.spawmtile = 1
+	s.spawntile = 16
 	
 	function s.onInteract(s)
 		if btnp(4)and p.keys > 0 and s.open == false then
@@ -1036,7 +1039,7 @@ function Door(x,y)
 	return s
 end
 
-function doorRoom(oldId,nextId)
+function doorRoom(oldId,nextId,fn)
 	local function func(x,y)
 		local s = Mob(x,y)
 		s.type = "tile"
@@ -1044,21 +1047,29 @@ function doorRoom(oldId,nextId)
 		s.id = oldId
 		s.c = 11
 		s.sp = 443
+		s.spawntile = 1
+		fn = fn or nil
 		
 		function s.update(s)
-			if col2(p,s) then
+			if btnp(4)and col2(p,s) then
 				for _,m in ipairs(mobs)do
 					if m.name == "doorRoom"then
 						if m.id == nextId then
-							p.x,p.y = m.x,m.y + 16
+							p.x,p.y = m.x,m.y + 10
 						end
 					end
 				end
 				fade(-2)
+				fn()
 			end
+			
+			s.dy = math.cos(t/16)*2
 		end
 		
 		function s.draw(s)
+			if col2(p,s)then
+				sprc(509,s.x,s.y-10+s.dy,11,1)
+			end
 			sprc(s.sp,s.x,s.y,s.c,1)
 		end
 		
@@ -1153,8 +1164,10 @@ spawntiles[161] = Wall(447)
 spawntiles[128] = Wall(128)
 spawntiles[244] = Door
 spawntiles[230] = Checkpoint
-spawntiles[232] = doorRoom("1-a","1-b") -- old door and next door
-spawntiles[233] = doorRoom("1-b","1-a")
+spawntiles[232] = doorRoom("1-a","1-b",function()showTextScreen("Boko's Store")end) -- old door and next door
+spawntiles[233] = doorRoom("1-b","1-a",function()showTextScreen("Dungeon")end)
+spawntiles[234] = doorRoom("2-a","2-b",function()showTextScreen("cu")end)
+spawntiles[235] = doorRoom("2-b","2-a",function()showTextScreen("Dungeon")end)
 
 -- Items
 spawntiles[241] = Coin
@@ -1194,7 +1207,7 @@ spawntiles[210] = NPC("Boko The Seller",210,{
 		"who learned from my great-grandfather...",
 		"who learned from my\ngreat-great-grandfather...",
 		"who also learned from my\ngreat-great-great-grandfather...",
-		"and finally learned from my\ngreat-great-great-grandfather.",
+		"and finally learned from my\ngreat-great-great-great-grandfather.",
 		"Well... what will you want?",
 	}
 },"npc")
@@ -1205,7 +1218,18 @@ spawntiles[211] = NPC("Efal",211,{
 		"I love reading books =)"
 	}
 },"npc")
--- }NPCs
+
+spawntiles[212] = NPC("dummy",208,{{}},"dummy")
+
+spawntiles[213] = NPC("Zamon The Dungeon Historian",213,{
+	{
+		"Did you come to my class?",
+		"No? No time? Okay...",
+		"my name is Zamom, I study the\narchitecture, the items and even the\nbeasts of this dungeon!",
+		"If you happen to\nfind one of my bookstores, try to be\ninterested in my research.",
+	}
+},"npc")
+--}NPCs
 
 -- Board 1
 spawntiles[218] = NPC(nil,444,{
@@ -1297,6 +1321,20 @@ function Hud()
 	end
 end
 
+function showTextScreen(text)
+	textScreen = text
+	textScreenTimer = t
+end
+
+function showTextScreenUpdate()
+	if t-textScreenTimer < 80 then
+		textScreenY = 68
+	else
+		textScreenY = textScreenY - 2
+	end	
+	printc(textScreen,120,textScreenY,2)
+end
+
 function menuUpdate()
 	if time()>3000 then
 		cls(0)
@@ -1379,7 +1417,7 @@ function gameUpdate()
 	Hud()
 	updateDialog()
 	drawFade()
-	eventsUpdate()
+	showTextScreenUpdate()
 	if saveIconTimer > 0 then spr(428,240-16,5+math.cos(t/8)*2,11,2)end
 end
 
@@ -1416,6 +1454,10 @@ function init()
 	bvx,bvy = 2,0
 	bf,br = 0,0
 	
+	textScreen = ""
+	textScreenTimer = -80
+	textScreenY = 68
+	
 	table.insert(mobs,p)
 	
 	dialog = {}
@@ -1427,6 +1469,7 @@ function init()
 	dix,diy = 0,60
 	
 	menu_state = 1
+	timerText = 0
 	
 	butn = {
 		{
