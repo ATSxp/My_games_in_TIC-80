@@ -2,7 +2,7 @@
 -- author: @ATS_xp
 -- desc:   Escape from the Demon King's dungeon to freedom!
 -- script: lua
--- saveid: o
+-- saveid: save_game
 
 trace(string.upper("\ngame compiled\nand\nsuccessfully run"),6)
 
