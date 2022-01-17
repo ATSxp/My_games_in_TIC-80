@@ -148,8 +148,8 @@ function updateDialog()
 				--rectb(dix,diy+(diy == 68 and -32 or (8*8)+4),32,32,2)
 				-- name 
 				local w = print(dialog_name,0,-6,0,false,1,true)
-				--rect(dix+37,diy+(diy == 68 and -11 or (8*8)+4),w+5,11,3)
-				rectb(dix+37,diy+(diy == 68 and -11 or (8*8)+4),w+5,11,3)
+				rect(dix+37,diy+(diy == 68 and -11 or (8*8)+4),w+5,11,3)
+				rectb(dix+37,diy+(diy == 68 and -11 or (8*8)+4),w+5,11,2)
 				printb(dialog_name,dix+40,diy+(diy == 68 and -8 or (8*8)+7),2,false,1,true,0)
 			end
 			--print(string.sub(str,1,text_pos),dix+10,diy+10,dialog_color)
@@ -596,7 +596,7 @@ function Player(x,y)
 	local s = Mob(x,y)
 	s.type = "hero"
 	s.name = "princess"
-	s.money = 0
+	s.money = 100
 	s.maxHp = 50
 	s.hp = s.maxHp
 	s.keys = 0
@@ -766,7 +766,7 @@ function Checkpoint(x,y)
 	return s
 end
 
-function NPC(name,sp,dialogs,type,spr)
+function NPC(name,sp,dialogs,type)
 	local function func(x,y)
 		local s = Mob(x,y)
 		s.type = type or "npc"
@@ -781,13 +781,14 @@ function NPC(name,sp,dialogs,type,spr)
 		
 		function s.onInteract(s)
 			s.dpos = (s.dpos%#dialogs)+1
-			addDialog(dialogs[s.dpos],s.dcolor,spr,name)
+			addDialog(dialogs[s.dpos],s.dcolor,s.sp,name)
 			s.over = true
 		end
 		function s.draw(s)
 			if s.sp > 207 and s.sp < 216 and t%32 == 0 then
 				if p.x > s.x then s.f = 0 else s.f = 1 end
-			end
+			end		
+			sprc(271,s.x,s.y+2,0,1)
 			
 			if s.type == "npc" or s.type == "board" then
 				s.collide = true
@@ -844,7 +845,7 @@ function Item(x,y)
 
 	function s.draw(s)
 		if not s.pickUp then
-			sprc(271,s.x,s.y+4,0,1)
+			sprc(271,s.x,s.y+2,0,1)
 			sprc(s.sp,s.x,s.y+s.dy,s.c,1)
 		end
 	end
@@ -1035,17 +1036,24 @@ function Door(x,y)
 	return s
 end
 
-function doorRoom(nextX,nextY)
+function doorRoom(oldId,nextId)
 	local function func(x,y)
 		local s = Mob(x,y)
 		s.type = "tile"
 		s.name = "doorRoom"
+		s.id = oldId
 		s.c = 11
 		s.sp = 443
 		
 		function s.update(s)
-			if col2(p,s)then
-				p.x,p.y = nextX,nextY
+			if col2(p,s) then
+				for _,m in ipairs(mobs)do
+					if m.name == "doorRoom"then
+						if m.id == nextId then
+							p.x,p.y = m.x,m.y + 16
+						end
+					end
+				end
 				fade(-2)
 			end
 		end
@@ -1057,6 +1065,60 @@ function doorRoom(nextX,nextY)
 		return s
 	end
 	return func
+end
+
+function Shop(x,y)
+	local s = Mob(x,y)
+	s.type = "sold"
+	s.c = 11
+	s.collide = true
+	s.price = 100
+	
+	function s.update(s)
+		if btnp(4)and col2(s,p) then
+			if type(s.price) == "number" then
+				if p.money >= s.price then
+					p.money = p.money - s.price
+					s.price = s.price * 2
+					s:buy()
+				else
+					addDialog({"no money"})
+				end
+			end
+		end
+	end
+	
+	function s.draw(s)
+		sprc(s.sp,s.x,s.y,s.c,1)
+		printb(s.price,s.x-mx,s.y+10-my,2,false,1,true)
+	end
+	return s
+end
+
+function potionShop(x,y)
+	local s = Shop(x,y)
+	s.name = "potionShop"
+	s.sp = 225
+	
+	function s.buy(s)
+		p.potions = p.potions + 1
+		addDialog({"You bought a POTION!"})
+	end
+	return s
+end
+
+function maShop(x,y)
+	local s = Shop(x,y)
+	s.name = "maShop"
+	s.sp = 227
+	s.price = 100
+	
+	function s.buy(s)
+		p.ma = 1
+		s.price = "sold"
+		addDialog({"You bought a \"Multiplied Arrows!\"","Now you can shoot more arrows than\nbefore!!"})
+	end
+	return s
 end
 
 function Wall(sp)
@@ -1091,7 +1153,8 @@ spawntiles[161] = Wall(447)
 spawntiles[128] = Wall(128)
 spawntiles[244] = Door
 spawntiles[230] = Checkpoint
-spawntiles[232] = doorRoom(14*8,9*8)
+spawntiles[232] = doorRoom("1-a","1-b") -- old door and next door
+spawntiles[233] = doorRoom("1-b","1-a")
 
 -- Items
 spawntiles[241] = Coin
@@ -1103,6 +1166,8 @@ spawntiles[227] = multipleArrows
 spawntiles[228] = diamondArrow
 spawntiles[243] = Key
 spawntiles[229] = magicShield
+spawntiles[176] = potionShop
+spawntiles[177] = maShop
 
 -- NPCs{
 -- Scavenger
@@ -1118,14 +1183,35 @@ spawntiles[208] = NPC("Scavenger",208,
 		"this is a beautiful story",
 		"Since you're here, I must warn you, there\nare monsters in front of this hallway,\njust be very careful with them."
 	}
-},"npc",208)
+},"npc")
+
+spawntiles[210] = NPC("Boko The Seller",210,{
+	{
+		"Oh! Hello! Apparently it was a great idea\nto come to this dungeon to continue the\nfamily business!",
+		"By the way my name is Boko, I'm the 6th\nsalesman of my family's generation.",
+		"I learned everything I know from my\nfather...",
+		"who learned from my grandfather...",
+		"who learned from my great-grandfather...",
+		"who learned from my\ngreat-great-grandfather...",
+		"who also learned from my\ngreat-great-great-grandfather...",
+		"and finally learned from my\ngreat-great-great-grandfather.",
+		"Well... what will you want?",
+	}
+},"npc")
+
+spawntiles[211] = NPC("Efal",211,{
+	{
+		"Hi, my name is Efal",
+		"I love reading books =)"
+	}
+},"npc")
 -- }NPCs
 
 -- Board 1
-spawntiles[246] = NPC(nil,477,
-{
+spawntiles[218] = NPC(nil,444,{
 	{
-		"leva minha fada ai mermao, namoral",
+		"Boko's new store opened today!!!",
+		"come visit us!!"
 	}
 },"board")
 
