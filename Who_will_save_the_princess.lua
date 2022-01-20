@@ -599,7 +599,7 @@ function Player(x,y)
 	s.maxHp = 5
 	s.hp = s.maxHp
 	s.keys = 0
-	s.potions = 1
+	s.potions = 0
 	s.boost = 0
 	s.ma = 0 -- "Multiplied Arrows" Power Up
 	s.da = 0 -- "Diamond Arrows" Power Up
@@ -1081,6 +1081,7 @@ function Shop(x,y)
 	s.c = 11
 	s.collide = true
 	s.price = 100
+	s.dy = 0
 	
 	function s.update(s)
 		if btnp(4)and col2(s,p) then
@@ -1094,10 +1095,11 @@ function Shop(x,y)
 				end
 			end
 		end
+		s.dy = math.sin(t/16)*2
 	end
 	
 	function s.draw(s)
-		sprc(s.sp,s.x,s.y,s.c,1)
+		sprc(s.sp,s.x,s.y-6+s.dy,s.c,1)
 		printb(s.price,s.x-mx,s.y+10-my,2,false,1,true)
 	end
 	return s
@@ -1107,6 +1109,7 @@ function potionShop(x,y)
 	local s = Shop(x,y)
 	s.name = "potionShop"
 	s.sp = 225
+	s.spawntile = 29
 	
 	function s.buy(s)
 		p.potions = p.potions + 1
@@ -1120,6 +1123,7 @@ function maShop(x,y)
 	s.name = "maShop"
 	s.sp = 227
 	s.price = 100
+	s.spawntile = 29
 	
 	function s.buy(s)
 		p.ma = 1
@@ -1290,7 +1294,7 @@ function Hud()
 	for i=1,p.maxHp do
 		spr(475,x,y,11)
 		x = x + 9
-		if x > 8*7 then x = 0;y = y + 8 end
+		if x > 8 * 7 then x = 0;y = y + 8 end
 	end
 		
 	if p.hit > 0 then
@@ -1301,13 +1305,13 @@ function Hud()
 	for i=1,p.hp do
 		spr(476,x,y,11)
 		x = x + 9
-		if x > 8*7 then x = 0;y = y + 8 end
+		if x > 8 * 7 then x = 0;y = y + 8 end
 	end
 	pal()
 	
-	local cb,potx,keyx = 0,8*8,2+8
+	local cb,potx,keyx,monx = 0,8*8,5,210
 	
-	if mget(potx//8,0) == 0 or mget(keyx//8,11) == 0 then cb = 1 end
+	if mget(potx//8,0) == 0 or mget(keyx//8,11) == 0 then cb = 1 else cb = 2 end
 	
 	if p.potions > 0 then spr(225,8*8,0,11,1) printb(p.potions,8*8+2,8,3,false,1,true,cb)end
 	if p.boost > 0 then spr(226,8*9,0,11,1) end
@@ -1315,13 +1319,13 @@ function Hud()
 	if p.da > 0 then spr(228,8*11,1,11,1) end
 	if p.shield > 0 then spr(229,8*12,1,11,1)end
 	
-	printb("$"..p.money,210,136-7,3,false,1,false,2)
+	printb("$"..p.money,monx,136-7,3,false,1,false,cb)
 	
 	if p.keys > 0 then
-		rect(1,10,8,8,3)
-		rectb(1,10,8,8,2)
-		spr(243,1,10,11,1)
-		printb(p.keys,2+8,11,12,false,1,false,cb)
+		rect(keyx,136-9,8,8,3)
+		rectb(keyx,136-9,8,8,2)
+		spr(243,keyx,136-9,11,1)
+		printb(p.keys,keyx+10,136-8,12,false,1,true,cb)
 	end
 end
 
@@ -1339,6 +1343,8 @@ function showTextScreenUpdate()
 	local tx,cb = 120,0
 	if mget(tx//8,textScreenY//8) == 0 then
 		cb = 1
+	else
+		cb = 0
 	end
 	printc(textScreen,tx,textScreenY,2,false,1,false,cb)
 end
