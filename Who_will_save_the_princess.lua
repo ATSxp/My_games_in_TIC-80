@@ -30,7 +30,7 @@ function set(tbl)
 	return s
 end
 
-SOLID = set{1,2,3,4,5,17,19,21,34,35,36,37,44,45,46,47,
+SOLID = set{1,2,3,4,5,17,19,21,29,34,35,36,37,44,45,46,47,
 60,61,62,63,75,76,77,78,79,92,93,94,95,108,109,110,111,
 124,125,126,127,140,141,142,143}
 
@@ -63,6 +63,7 @@ function printb(text,x,y,c,fix,s,sm,cb)
 	print(text,x,y-1,cb,fix,s,sm)
 	print(text,x,y+1,cb,fix,s,sm)
 	print(text,x,y,c,fix,s,sm)
+	return print(text,x,y,c,fix,s,sm,cb)
 end
 
 -- By: Nesbox / me
@@ -752,6 +753,7 @@ function safePoint(x,y)
 			p.hp = p.maxHp
 			addDialog({"You have been restored"})
 		end
+		s.dy = math.cos((t/16))*2
 	end
 	
 	function s.draw(s)
@@ -759,7 +761,7 @@ function safePoint(x,y)
 			addParts({x = s.x+4,y = s.y,vy = - 0.5,c = 2,mode = 5,max = 80})
 		end
 		if col2(s,p)then
-			sprc(509,s.x,(s.y-10)+math.cos((t/16))*2,11,1)
+			sprc(509,s.x,(s.y-10)+s.dy,11,1)
 		end
 	end
 	return s
@@ -952,10 +954,10 @@ function magicShield(x,y)
 end
 
 chest_item = {
-	-- 1,   2,   3,           4,  5,    6,
-	{Potion,Coin,coinExchange,Bat,Boost,magicShield},
-	-- 1, 2, 3,  4,                    5,  6,
-	{nil,nil,nil,"Watch out! A bat!!!",nil,nil}
+	-- 1, 2,           3,   4,    5,          6,  7,
+	{Coin,coinExchange,Coin,Boost,magicShield,Bat,Potion},
+	-- 1, 2, 3,  4,  5,  6,                    7,
+	{nil,nil,nil,nil,nil,"Watch out! A bat!!!",nil}
 }
 
 function Chest(x,y)
@@ -1046,6 +1048,7 @@ function doorRoom(oldId,nextId,textScreen)
 		s.sp = 443
 		s.spawntile = 1
 		textScreen = textScreen or ""
+		s.enter = false
 		
 		function s.update(s)
 			if btnp(4)and col2(p,s) then
@@ -1056,6 +1059,7 @@ function doorRoom(oldId,nextId,textScreen)
 						end
 					end
 				end
+				s.enter = true
 				fade(-2)
 				showTextScreen(textScreen)
 			end
@@ -1064,8 +1068,15 @@ function doorRoom(oldId,nextId,textScreen)
 		end
 		
 		function s.draw(s)
+			local wp = printb(textScreen,0,-6,2,false,1,true)
+			local cb,doorx,doory = 0,(s.x-wp//3),s.y-16+s.dy
+			if mget(doorx//8,doory//8) == 0 then cb = 1 else cb = 0 end
+		
 			if col2(p,s)then
 				sprc(509,s.x,s.y-10+s.dy,11,1)
+				if s.enter then	
+					printb(textScreen,doorx-mx,doory-my,2,false,1,true,cb)
+				end
 			end
 			sprc(s.sp,s.x,s.y,s.c,1)
 		end
@@ -1091,16 +1102,21 @@ function Shop(x,y)
 					s.price = s.price * 2
 					s:buy()
 				else
-					addDialog({"no money"})
+					addDialog({"You don't have enough coins"})
 				end
 			end
 		end
 		s.dy = math.sin(t/16)*2
+		s.dy2 = math.cos((t/16))*2
 	end
 	
 	function s.draw(s)
 		sprc(s.sp,s.x,s.y-6+s.dy,s.c,1)
 		printb(s.price,s.x-mx,s.y+10-my,2,false,1,true)
+		
+		if col2(s,p)then
+			sprc(509,s.x,(s.y-16)+s.dy2,11,1)
+		end
 	end
 	return s
 end
@@ -1167,7 +1183,7 @@ spawntiles[244] = Door
 spawntiles[230] = safePoint
 spawntiles[232] = doorRoom("1-a","1-b","Boko's Store") -- old door and next door
 spawntiles[233] = doorRoom("1-b","1-a","Dungeon")
-spawntiles[234] = doorRoom("2-a","2-b","cu")
+spawntiles[234] = doorRoom("2-a","2-b","Zamon's Classroom")
 spawntiles[235] = doorRoom("2-b","2-a","Dungeon")
 
 -- Items
@@ -1216,7 +1232,11 @@ spawntiles[210] = NPC("Boko The Seller",210,{
 spawntiles[211] = NPC("Efal",211,{
 	{
 		"Hi, my name is Efal",
-		"I love reading books =)"
+		"I love reading books =)",
+		"Let me tell you a story",
+		"once a customer came here and \"buy\"\nsomething without paying, my dad hates\npeople who want their products for free",
+		"So daddy used that sword on the wall and\nattacked the boy, never saw him again",
+		"Never try to do this to him, always come\nback =).",
 	}
 },"npc")
 
