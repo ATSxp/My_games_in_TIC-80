@@ -30,9 +30,9 @@ function set(tbl)
 	return s
 end
 
-SOLID = set{1,2,3,4,5,17,19,21,34,35,36,37,45,46,47,
-61,62,63,77,78,79,92,93,94,95,108,109,110,111,124,125,
-126,127,140,141,142,143}
+SOLID = set{1,2,3,4,5,17,19,21,34,35,36,37,44,45,46,47,
+60,61,62,63,75,76,77,78,79,92,93,94,95,108,109,110,111,
+124,125,126,127,140,141,142,143}
 
 function anim(f,s)local f,s = f or {},s or 8;return f[((t//s)%#f)+1] end
 
@@ -189,8 +189,7 @@ function fade(mz,x,x2,mode)
 		z = mz,
 		mode = mode or 1,
 	}
-	
-	rec[#rec+1] = f
+	table.insert(rec,f)
 end
 
 function drawFade()
@@ -476,7 +475,7 @@ function Goblin(x,y)
 		die = {309},
 		atk = {307,308}
 	}
-	s.dmg = math.random(2,6)
+	s.dmg = math.random(1,2)
 	s.range = 50
 	s.speed = 0.8
 	s.supUpdate = s.update
@@ -485,7 +484,7 @@ function Goblin(x,y)
 		s:supUpdate()	
 		if not s.die then			
 			s:seePlayer(p.x,p.y)
-			s.dmg = math.random(2,6)
+			s.dmg = math.random(1,2)
 		end
 	end
 	
@@ -508,15 +507,13 @@ function Bat(x,y)
 	s.hp = math.random(5,8)
 	s.range = 60
 	s.speed = 0.5
-	s.dmg = math.random(1,3)
+	s.dmg = 1
 	s.supUpdate = s.update
 	
 	function s.update(s)
 		s:supUpdate()	
 		if not s.die then			
 			s:seePlayer(p.x,p.y)
-			
-			s.dmg = math.random(1,3)
 		end
 	end
 	
@@ -553,7 +550,7 @@ function Skeleton(x,y)
 	s.hp = 20
 	s.speed = 0.3
 	s.range = 20
-	s.dmg = 10
+	s.dmg = 4
 	s.supUpdate = s.update
 	
 	function s.update(s)
@@ -599,10 +596,10 @@ function Player(x,y)
 	s.type = "hero"
 	s.name = "princess"
 	s.money = 100
-	s.maxHp = 50
+	s.maxHp = 5
 	s.hp = s.maxHp
 	s.keys = 0
-	s.potions = 0
+	s.potions = 1
 	s.boost = 0
 	s.ma = 0 -- "Multiplied Arrows" Power Up
 	s.da = 0 -- "Diamond Arrows" Power Up
@@ -744,16 +741,16 @@ function Fairy(x,y)
 	return s
 end
 
-function Checkpoint(x,y)
+function safePoint(x,y)
 	local s = Mob(x,y)
 	s.type = "magic"
-	s.name = "checkpoint"
+	s.name = "safePoint"
 	s.spawntile = 50
 	
 	function s.update(s)
 		if col2(s,p)and btnp(4)then
-			Save()
-			addDialog({"Game Saved"})
+			p.hp = p.maxHp
+			addDialog({"You have been restored"})
 		end
 	end
 	
@@ -1039,7 +1036,7 @@ function Door(x,y)
 	return s
 end
 
-function doorRoom(oldId,nextId,fn)
+function doorRoom(oldId,nextId,textScreen)
 	local function func(x,y)
 		local s = Mob(x,y)
 		s.type = "tile"
@@ -1048,7 +1045,7 @@ function doorRoom(oldId,nextId,fn)
 		s.c = 11
 		s.sp = 443
 		s.spawntile = 1
-		fn = fn or nil
+		textScreen = textScreen or ""
 		
 		function s.update(s)
 			if btnp(4)and col2(p,s) then
@@ -1060,7 +1057,7 @@ function doorRoom(oldId,nextId,fn)
 					end
 				end
 				fade(-2)
-				fn()
+				showTextScreen(textScreen)
 			end
 			
 			s.dy = math.cos(t/16)*2
@@ -1163,11 +1160,11 @@ spawntiles[160] = Wall(446)
 spawntiles[161] = Wall(447)
 spawntiles[128] = Wall(128)
 spawntiles[244] = Door
-spawntiles[230] = Checkpoint
-spawntiles[232] = doorRoom("1-a","1-b",function()showTextScreen("Boko's Store")end) -- old door and next door
-spawntiles[233] = doorRoom("1-b","1-a",function()showTextScreen("Dungeon")end)
-spawntiles[234] = doorRoom("2-a","2-b",function()showTextScreen("cu")end)
-spawntiles[235] = doorRoom("2-b","2-a",function()showTextScreen("Dungeon")end)
+spawntiles[230] = safePoint
+spawntiles[232] = doorRoom("1-a","1-b","Boko's Store") -- old door and next door
+spawntiles[233] = doorRoom("1-b","1-a","Dungeon")
+spawntiles[234] = doorRoom("2-a","2-b","cu")
+spawntiles[235] = doorRoom("2-b","2-a","Dungeon")
 
 -- Items
 spawntiles[241] = Coin
@@ -1225,7 +1222,7 @@ spawntiles[213] = NPC("Zamon The Dungeon Historian",213,{
 	{
 		"Did you come to my class?",
 		"No? No time? Okay...",
-		"my name is Zamom, I study the\narchitecture, the items and even the\nbeasts of this dungeon!",
+		"my name is Zamon, I study the\narchitecture, the items and even the\nbeasts of this dungeon!",
 		"If you happen to\nfind one of my bookstores, try to be\ninterested in my research.",
 	}
 },"npc")
@@ -1289,23 +1286,30 @@ function buttonUpdate()
 end
 
 function Hud()
-	if not p.die then
-		if p.hit > 0 then
-			pal(1,3)
-		end
-		rect(2,0,p.hp,8,1)
-		pal()
-		spr(476,7*8,0,11,1)
-	else
-		spr(475,7*8,0,11,1)
+	local x,y = 0,3
+	for i=1,p.maxHp do
+		spr(475,x,y,11)
+		x = x + 9
+		if x > 8*7 then x = 0;y = y + 8 end
 	end
-	spr(502,0,0,11,1)
-	spr(504,6*8-2,0,11,1)
-	for i = 0,4 do
-		spr(503,8*i+8,0,11,1)
+		
+	if p.hit > 0 then
+		for i=0,3 do pal(i,3)end
 	end
+		
+	local x,y = 0,3
+	for i=1,p.hp do
+		spr(476,x,y,11)
+		x = x + 9
+		if x > 8*7 then x = 0;y = y + 8 end
+	end
+	pal()
 	
-	if p.potions > 0 then spr(225,8*8,0,11,1) printb(p.potions,8*8+2,8,3,false,1,true)end
+	local cb,potx,keyx = 0,8*8,2+8
+	
+	if mget(potx//8,0) == 0 or mget(keyx//8,11) == 0 then cb = 1 end
+	
+	if p.potions > 0 then spr(225,8*8,0,11,1) printb(p.potions,8*8+2,8,3,false,1,true,cb)end
 	if p.boost > 0 then spr(226,8*9,0,11,1) end
 	if p.ma > 0 then spr(227,8*10,1,11,1) end
 	if p.da > 0 then spr(228,8*11,1,11,1) end
@@ -1317,7 +1321,7 @@ function Hud()
 		rect(1,10,8,8,3)
 		rectb(1,10,8,8,2)
 		spr(243,1,10,11,1)
-		printb(p.keys,2+8,11,12)
+		printb(p.keys,2+8,11,12,false,1,false,cb)
 	end
 end
 
@@ -1331,8 +1335,12 @@ function showTextScreenUpdate()
 		textScreenY = 68
 	else
 		textScreenY = textScreenY - 2
-	end	
-	printc(textScreen,120,textScreenY,2)
+	end
+	local tx,cb = 120,0
+	if mget(tx//8,textScreenY//8) == 0 then
+		cb = 1
+	end
+	printc(textScreen,tx,textScreenY,2,false,1,false,cb)
 end
 
 function menuUpdate()
@@ -1363,32 +1371,6 @@ function Music(track,loop)
 		music(track,-1,-1,loop)
 		startMusic = true
 	end
-end
-
-function Save()	
-	local px,py = math.floor(p.x),math.floor(p.y)
-	pmem(0,px)pmem(1,py)
-	pmem(2,p.potions)pmem(3,p.money)pmem(4,p.keys)
-	pmem(5,p.boost)pmem(6,p.ma)pmem(7,p.da)pmem(8,p.shield)
-	pmem(9,p.hp)
-	p.hp = p.maxHp
-	trace("== SAVED ==",7)
-	saveIconTimer = 100
-end
-
-function Load()
-	p.x = pmem(0)
-	p.y = pmem(1)
-	p.potions = pmem(2)
-	p.money = pmem(3)
-	p.keys = pmem(4)
-	p.boost = pmem(5)
-	p.ma = pmem(6)
-	p.da = pmem(7)
-	p.shield = pmem(8)
-	p.hp = pmem(9)
-	spawnMobs()
-	trace("== LOADED ==",2)
 end
 
 function gameUpdate()
@@ -1426,6 +1408,21 @@ function optionUpdate()
 end
 
 function Debug()
+	text_debug = {
+		[1] = {
+			{str = "X: "..math.floor(p.x)},
+			{str = "Y: "..math.floor(p.y)},
+			{str = "Hp: "..p.hp},
+			{str = "Speed: "..p.speed},
+			{str = "Boost: "..p.boost},
+			{str = "bTimer: "..bullet_timer},
+			{str = "MapX: "..mx},
+			{str = "MapY: "..my},
+			{str = "Bullets: "..#bullet},
+			{str = "Particles: "..#parts},
+			{str = "Debug Mode: "..tostring(STATE_DEBUG)},
+		},
+	}
 	if _GAME.on then
 		for i=1,#text_debug[1] do
 			printb(text_debug[1][i].str,0,8*i+5,9,false,1,true)
@@ -1437,6 +1434,7 @@ function init()
 	STATE_MENU = 0
 	STATE_GAME = 1
 	STATE_OPTION = 2
+	STATE_GAMEOVER = 3
 	startMusic = false
 	saved = false
 	saveIconTimer = 0
@@ -1474,9 +1472,8 @@ function init()
 	butn = {
 		{
 			id = 1,
-			str = "New Game",
+			str = "Start Game",
 			on = function(s)
-				pmem(0,0)
 				trace("============ GAME ============",4)
 				_GAME.state = STATE_GAME
 				fade(-1)
@@ -1484,18 +1481,6 @@ function init()
 		},
 		{
 			id = 2,
-			str = pmem(0) > 0 and "Load Game" or "Load Game -- Empty",
-			on = function(s)
-				if pmem(0) > 0 then
-					Load()
-					trace("============ GAME ============",4)
-					_GAME.state = STATE_GAME
-					fade(-1)
-				end
-			end
-		},
-		{
-			id = 3,
 			str = "Options",
 			on = function(s)
 				trace("============ OPTIONS ============",4)
@@ -1504,7 +1489,7 @@ function init()
 			end,
 		},
 		{
-			id = 4,
+			id = 3,
 			str = "Exit",
 			on = function(s)
 				trace("============ EXIT ============",4)
@@ -1516,22 +1501,6 @@ function init()
 	
 	mx,my = p.x//240*240,p.y//136*136
 	spawnMobs()
-	
-	text_debug = {
-		[1] = {
-			{str = "X: "..math.floor(p.x)},
-			{str = "Y: "..math.floor(p.y)},
-			{str = "Hp: "..p.hp},
-			{str = "Speed: "..p.speed},
-			{str = "Boost: "..p.boost},
-			{str = "bTimer: "..bullet_timer},
-			{str = "MapX: "..mx},
-			{str = "MapY: "..my},
-			{str = "Bullets: "..#bullet},
-			{str = "Particles: "..#parts},
-			{str = "Debug Mode: "..tostring(STATE_DEBUG)},
-		},
-	}
 end
 
 init()
