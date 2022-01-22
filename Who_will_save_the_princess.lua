@@ -3,17 +3,16 @@
 -- desc:   Escape from the Demon King's dungeon to freedom!
 -- script: lua
 -- saveid: save_game
+-- input: keyboard/gamepad
 
 trace(string.upper("\ngame compiled\nand\nsuccessfully run"),6)
 
-t=0
+t = 0
 
 _GAME = {
 	on = false,
-	state =	1,
+	state =	0,
 }
-
-local SPAWN_FLOOR = 16
 
 function set(tbl)
 	local s = {}
@@ -31,8 +30,8 @@ function set(tbl)
 end
 
 SOLID = set{1,2,3,4,5,17,19,21,29,34,35,36,37,44,45,46,47,
-60,61,62,63,75,76,77,78,79,92,93,94,95,108,109,110,111,
-124,125,126,127,140,141,142,143}
+60,61,62,63,72,73,74,75,76,77,78,79,92,93,94,95,108,109,
+110,111,124,125,126,127,140,141,142,143}
 
 function anim(f,s)local f,s = f or {},s or 8;return f[((t//s)%#f)+1] end
 
@@ -303,7 +302,7 @@ function Mob(x,y)
 	s.t = 0
 	s.hp = 1
 	s.sp = s.sp
-	s.spawntile = s.spawntile or SPAWN_FLOOR
+	s.spawntile = s.spawntile or 16
 	s.anims = {}
 	s.die = false
 	s.collide = false
@@ -607,6 +606,7 @@ function Player(x,y)
 	s.shield = 0
 	s.sp = 256
 	s.c = 11
+	s.f = 1
 	s.dmg = 2
 	s.speed = 0.9
 	s.supMove = s.move
@@ -750,8 +750,12 @@ function safePoint(x,y)
 	
 	function s.update(s)
 		if col2(s,p)and btnp(4)then
-			p.hp = p.maxHp
-			addDialog({"You have been restored"})
+			if p.hp < p.maxHp then
+				p.hp = p.maxHp
+				addDialog({"You have been restored"})
+			else
+				addDialog({"You don't need to be restored"})
+			end
 		end
 		s.dy = math.cos((t/16))*2
 	end
@@ -1399,6 +1403,39 @@ function Music(track,loop)
 	end
 end
 
+local loadAnim = {
+	{274,275}, -- Fairy
+	{307,308}, -- Goblin
+	{321,322}, -- Bat
+	{339,340}, -- Skeleton
+	{356,357}, -- Cerberus
+	{257,258}, -- Princess
+}	
+local indexLoad = math.random(1,#loadAnim)
+function Loading()
+	cls()
+	loadingTimer = loadingTimer - 1
+	
+	local dy = math.sin(t/8)*4
+	local y = 21
+	
+	for i=0,3 do
+		pal(i,3)
+		spr(anim(loadAnim[indexLoad],16),240-17-1,136-y+dy,11,2,1)
+		spr(anim(loadAnim[indexLoad],16),240-17+1,136-y+dy,11,2,1)
+		spr(anim(loadAnim[indexLoad],16),240-17,136-y-1+dy,11,2,1)
+		spr(anim(loadAnim[indexLoad],16),240-17,136-y+1+dy,11,2,1)
+	end
+	pal()
+	spr(anim(loadAnim[indexLoad],16),240-17,136-y+dy,11,2,1)
+	--printb("Loading...",0,136-8,3,false,1,false,1)
+	
+	if loadingTimer < 0 then
+		_GAME.state = STATE_GAME
+		fade(-1)
+	end
+end
+
 function gameUpdate()
 	if global_hitpause > 0 then
 		global_hitpause = global_hitpause - 1
@@ -1408,8 +1445,6 @@ function gameUpdate()
 		end
 		bulletUpdate()
 		updateParts()
-		
-		if saveIconTimer > 0 then saveIconTimer = saveIconTimer - 1 end
 	end
 	
 	cls()
@@ -1426,7 +1461,6 @@ function gameUpdate()
 	updateDialog()
 	drawFade()
 	showTextScreenUpdate()
-	if saveIconTimer > 0 then spr(428,240-16,5+math.cos(t/8)*2,11,2)end
 end
 
 function optionUpdate()
@@ -1459,11 +1493,12 @@ end
 function init()
 	STATE_MENU = 0
 	STATE_GAME = 1
-	STATE_OPTION = 2
-	STATE_GAMEOVER = 3
+	STATE_LOADING = 2
+	STATE_OPTION = 3
+	STATE_GAMEOVER = 4
 	startMusic = false
 	saved = false
-	saveIconTimer = 0
+	loadingTimer = 100
 	
 	global_hitpause = 0
 	parts = {}
@@ -1501,8 +1536,8 @@ function init()
 			str = "Start Game",
 			on = function(s)
 				trace("============ GAME ============",4)
-				_GAME.state = STATE_GAME
-				fade(-1)
+				_GAME.state = STATE_LOADING
+				--fade(-1)
 			end
 		},
 		{
@@ -1533,6 +1568,8 @@ init()
 function TIC()
 	if _GAME.state == STATE_MENU then
 		menuUpdate()
+	elseif _GAME.state == STATE_LOADING then
+		Loading()
 	elseif _GAME.state == STATE_GAME then
 		gameUpdate()
 		Debug()
