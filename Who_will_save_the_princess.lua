@@ -1189,6 +1189,8 @@ spawntiles[232] = doorRoom("1-a","1-b","Boko's Store") -- old door and next door
 spawntiles[233] = doorRoom("1-b","1-a","Dungeon")
 spawntiles[234] = doorRoom("2-a","2-b","Zamon's Classroom")
 spawntiles[235] = doorRoom("2-b","2-a","Dungeon")
+spawntiles[248] = doorRoom("!-a","!-b")
+spawntiles[249] = doorRoom("!-b","!-a")
 
 -- Items
 spawntiles[241] = Coin
@@ -1410,25 +1412,40 @@ local loadAnim = {
 	{339,340}, -- Skeleton
 	{356,357}, -- Cerberus
 	{257,258}, -- Princess
-}	
-local indexLoad = math.random(1,#loadAnim)
+}
+local loadMsg = {
+	"Use the fairy to activate the runes to\nrestore yourself",
+	"Are you in need of items?  Go to the Boko store!",
+}
+local indexLoadAnim = math.random(1,#loadAnim)
+local indexLoadMsg = math.random(1,#loadMsg)
+loadingTimer = math.random(100,500)
 function Loading()
 	cls()
 	loadingTimer = loadingTimer - 1
-	
+	local pw = printb(loadMsg[indexLoadMsg],0,-32,3,false,1,true,1)
 	local dy = math.sin(t/8)*4
-	local y = 21
+	local bw,bh = pw+3,9
+	local y,by,bx = 21,108,((240-bw)//2)
+	
+	if loadMsg[indexLoadMsg]:find("\n")then
+		bh = bh + 6
+	end
 	
 	for i=0,3 do
 		pal(i,3)
-		spr(anim(loadAnim[indexLoad],16),240-17-1,136-y+dy,11,2,1)
-		spr(anim(loadAnim[indexLoad],16),240-17+1,136-y+dy,11,2,1)
-		spr(anim(loadAnim[indexLoad],16),240-17,136-y-1+dy,11,2,1)
-		spr(anim(loadAnim[indexLoad],16),240-17,136-y+1+dy,11,2,1)
+		spr(anim(loadAnim[indexLoadAnim],16),240-17-1,136-y+dy,11,2,1)
+		spr(anim(loadAnim[indexLoadAnim],16),240-17+1,136-y+dy,11,2,1)
+		spr(anim(loadAnim[indexLoadAnim],16),240-17,136-y-1+dy,11,2,1)
+		spr(anim(loadAnim[indexLoadAnim],16),240-17,136-y+1+dy,11,2,1)
 	end
 	pal()
-	spr(anim(loadAnim[indexLoad],16),240-17,136-y+dy,11,2,1)
-	--printb("Loading...",0,136-8,3,false,1,false,1)
+	spr(anim(loadAnim[indexLoadAnim],16),240-17,136-y+dy,11,2,1)
+	
+	rect(bx,by,bw,bh,3)
+	rectb(bx,by,bw,bh,2)
+	printc(loadMsg[indexLoadMsg],120,110,2,false,1,true)
+	--print(indexLoadMsg,10,10,3)
 	
 	if loadingTimer < 0 then
 		_GAME.state = STATE_GAME
@@ -1498,7 +1515,7 @@ function init()
 	STATE_GAMEOVER = 4
 	startMusic = false
 	saved = false
-	loadingTimer = 100
+	loadingTimer = math.random(100,500)
 	
 	global_hitpause = 0
 	parts = {}
