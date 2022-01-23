@@ -339,12 +339,6 @@ function Mob(x,y)
 		
 			if dst > s.fov then
 				if dst <= s.range then
-					--[[if math.abs(dx) >= s.speed then 
-						s:move(dx > 0 and s.speed or - s.speed,0)
-					end
-					if math.abs(dy) >= s.speed then 
-						s:move(0,dy > 0 and s.speed or - s.speed)
-					end--]]
 					s:move(math.cos(a)*s.speed,math.sin(a)*s.speed)
 				else
 					s.vx,s.vy = 0,0
