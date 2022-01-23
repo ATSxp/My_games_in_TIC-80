@@ -11,8 +11,10 @@ t = 0
 
 _GAME = {
 	on = false,
-	state =	0,
+	state =	1,
 }
+
+local exp = math.random(1,10)
 
 function set(tbl)
 	local s = {}
@@ -328,6 +330,7 @@ function Mob(x,y)
 		local dx = x1 - s.x
 		local dy = y1 - s.y
 		local dst = math.sqrt((dx^2+dy^2))
+		local a = math.atan2(y1-s.y,x1-s.x)
 		
 		if  s.hitpause > 0 then
 			s.hitpause = s.hitpause - 1
@@ -336,14 +339,13 @@ function Mob(x,y)
 		
 			if dst > s.fov then
 				if dst <= s.range then
-					--if t%2==0 then
-						if math.abs(dx) >= s.speed then 
-							s:move(dx > 0 and s.speed or - s.speed,0)
-						end
-						if math.abs(dy) >= s.speed then 
-							s:move(0,dy > 0 and s.speed or - s.speed)
-						end
-					--end
+					--[[if math.abs(dx) >= s.speed then 
+						s:move(dx > 0 and s.speed or - s.speed,0)
+					end
+					if math.abs(dy) >= s.speed then 
+						s:move(0,dy > 0 and s.speed or - s.speed)
+					end--]]
+					s:move(math.cos(a)*s.speed,math.sin(a)*s.speed)
 				else
 					s.vx,s.vy = 0,0
 				end
@@ -441,6 +443,7 @@ function Mob(x,y)
 					addParts({x = 2*i+s.x,y = s.y,c = 1,vy = - math.random(1,2)/2})
 				end
 				table.insert(mobs,chest_item[1][math.random(1,3)](s.x,s.y+4))
+				table.insert(mobs,Exp(s.x,s.y))
 			end
 			
 		end
@@ -477,11 +480,11 @@ function Goblin(x,y)
 	}
 	s.dmg = math.random(1,2)
 	s.range = 50
-	s.speed = 0.8
+	s.speed = 0.5
 	s.supUpdate = s.update
 	
 	function s.update(s)
-		s:supUpdate()	
+		s:supUpdate()
 		if not s.die then			
 			s:seePlayer(p.x,p.y)
 			s.dmg = math.random(1,2)
@@ -514,6 +517,7 @@ function Bat(x,y)
 		s:supUpdate()	
 		if not s.die then			
 			s:seePlayer(p.x,p.y)
+			s.dy = math.sin(t/8)*2
 		end
 	end
 	
@@ -527,7 +531,7 @@ function Bat(x,y)
 			if not s.die then
 				sprc(271,s.x,s.y+3,0,1)
 			end
-			sprc(s.sp,s.x,s.y-4 + (s.die and 0 or (s.atk and 0 or math.sin(t/8)*2)),s.c,1,s.f)
+			sprc(s.sp,s.x,s.y-4 + (s.die and 0 or (s.atk and 0 or s.dy)),s.c,1,s.f)
 		end
 		pal()
 	end
@@ -576,15 +580,16 @@ function Cerberus(x,y)
 		die = {358},
 	}
 	s.hp = 10
+	s.range = 80
 	s.speed = 1
-	s.range = 20
-	s.dmg = 5
+	s.dmg = math.random(1,3)
 	s.supUpdate = s.update
 	
 	function s.update(s)
 		s:supUpdate()
 		if not s.die then			
 			s:seePlayer(p.x,p.y)
+			s.dmg = math.random(1,3)
 		end
 	end
 	
@@ -598,6 +603,7 @@ function Player(x,y)
 	s.money = 100
 	s.maxHp = 5
 	s.hp = s.maxHp
+	s.exp = 0
 	s.keys = 0
 	s.potions = 0
 	s.boost = 0
@@ -628,7 +634,6 @@ function Player(x,y)
 	function s.anim(s)
 		if s.vx ~= 0 or s.vy ~= 0 then s.sp = s.anims.walk  
 		elseif btn(6) then s.sp = s.anims.atk 
-		elseif s.hp <= 0 then s.sp = s.anims.die
 		else s.sp = s.anims.idle end
 	end
 	
@@ -642,7 +647,18 @@ function Player(x,y)
 		end
 	end
 	
+	function s.levelUp(s)
+		if p.exp > 100 then
+			addDialog({"Level up!!","One more heart has been added to your\nhealth bar"})
+			p.exp = 0
+			p.exp = p.exp + exp
+			p.maxHp = p.maxHp + 1
+			p.hp = p.maxHp
+		end
+	end
+	
 	function s.update(s)
+		if s.hp <= 0 then s.sp = s.anims.die end
 		if s.die then return end
 		s.vx = 0
 		s.vy = 0
@@ -678,6 +694,7 @@ function Player(x,y)
 		
 		s:cam()
 		s:anim()
+		s:levelUp()
 	end
 	
 	function s.draw(s)
@@ -830,6 +847,8 @@ function Item(x,y)
 	s.timer = 0
 	s.c = - 1
 	s.dy = 0
+	s.fov = 0
+	s.range = 50
 	
 	function s.update(s)
 		if s.pickUp then return end
@@ -847,6 +866,8 @@ function Item(x,y)
 				s.t = s.t + 1
 			end
 		end
+		
+		
 	end
 
 	function s.draw(s)
@@ -870,8 +891,11 @@ function Coin(x,y)
 		p.money = p.money + rnd
 		addParts({text = "+"..rnd,x = s.x,y = s.y,mode = 2,c = 3,small = true})
 	end
+	
 	function s.update(s)
+		if s.pickUp then return end
 		s:supUpdate()
+		s:seePlayer(p.x,p.y)
 		s.sp = anim({241,459,459})
 	end
 	return s
@@ -1003,6 +1027,29 @@ function Key(x,y)
 	function s.onPickUp(s)
 		addDialog({"You found a key!","Use it to unlock doors."})
 		p.keys = p.keys + 1
+	end
+	return s
+end
+
+function Exp(x,y)
+	local s = Item(x,y)
+	s.name = "exp"
+	s.sp = 246
+	s.c = 11
+	s.speed = 1.5
+	s.supUpdate = s.update
+	
+	function s.onPickUp(s)
+		p.exp = p.exp + exp
+		
+		local oldx,oldy = s.x,s.y
+		addParts({x = oldx,y = oldy,c = 3,mode = 2,vy = - 0.5,text = "+"..exp.." exp"})
+	end
+	
+	function s.update(s)
+		if s.pickUp then return end
+		s:supUpdate()
+		s:seePlayer(p.x,p.y)
 	end
 	return s
 end
@@ -1335,6 +1382,14 @@ function Hud()
 	end
 	pal()
 	
+	rect(5+10,136-9,p.exp,8,3)
+	spr(505,5+8,136-9,11,1)
+	spr(505,5*24-11,136-9,11,1,1)
+	for i = 1,11 do
+		spr(506,8*i+(5+8),136-9,11,1)
+	end
+	printb("EXP",((13*9)//2),136-8,3,false,1,true)
+	
 	local cb,potx,keyx,monx = 0,8*8,5,210
 	
 	if mget(potx//8,0) == 0 or mget(keyx//8,11) == 0 then cb = 1 else cb = 2 end
@@ -1423,14 +1478,9 @@ loadingTimer = math.random(100,500)
 function Loading()
 	cls()
 	loadingTimer = loadingTimer - 1
-	local pw = printb(loadMsg[indexLoadMsg],0,-32,3,false,1,true,1)
-	local dy = math.sin(t/8)*4
-	local bw,bh = pw+3,9
-	local y,by,bx = 21,108,((240-bw)//2)
 	
-	if loadMsg[indexLoadMsg]:find("\n")then
-		bh = bh + 6
-	end
+	local dy = math.sin(t/8)*4
+	local y = 21
 	
 	for i=0,3 do
 		pal(i,3)
@@ -1442,9 +1492,7 @@ function Loading()
 	pal()
 	spr(anim(loadAnim[indexLoadAnim],16),240-17,136-y+dy,11,2,1)
 	
-	rect(bx,by,bw,bh,3)
-	rectb(bx,by,bw,bh,2)
-	printc(loadMsg[indexLoadMsg],120,110,2,false,1,true)
+	printc(loadMsg[indexLoadMsg],120,110,3,false,1,true,1)
 	--print(indexLoadMsg,10,10,3)
 	
 	if loadingTimer < 0 then
@@ -1497,6 +1545,7 @@ function Debug()
 			{str = "MapY: "..my},
 			{str = "Bullets: "..#bullet},
 			{str = "Particles: "..#parts},
+			{str = "Ents: "..#mobs},
 			{str = "Debug Mode: "..tostring(STATE_DEBUG)},
 		},
 	}
