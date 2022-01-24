@@ -9,10 +9,9 @@ trace(string.upper("\ngame compiled\nand\nsuccessfully run"),6)
 
 t = 0
 
-_GAME = {
-	on = false,
-	state =	1,
-}
+_GAME = {}
+_GAME.on = false
+_GAME.state =	1
 
 local exp = math.random(1,10)
 
@@ -67,7 +66,7 @@ function printb(text,x,y,c,fix,s,sm,cb)
 	return print(text,x,y,c,fix,s,sm,cb)
 end
 
--- By: Nesbox / me
+-- By: Nesbox / mod by me
 function printc(s,x,y,c,f,sc,sm,cb)
     local w=print(s,0,-18,c,f or false,sc or 1,sm or false,cb or 0)
     printb(s,x-(w/2),y,c or 15,f or false,sc or 1,sm or false,cb or 0)
@@ -79,10 +78,10 @@ function pal(c0,c1)
  else poke4(0x3FF0*2+c0,c1) end
 end
 
-function dist(x1,y1,x2,y2) return math.max(math.abs(x1-x2),math.abs(y1-y2))end
 function col(x1,y1,w1,h1,x2,y2,w2,h2)return x1<x2+w2 and y1<y2+h2 and x2<x1+w1 and y2<y1+h1 end
 function col2(a,b)if a ~= b and col(a.x,a.y,a.w,a.h,b.x,b.y,b.w,b.h)then return true end end
 function col3(x1,y1,w1,h1,x2,y2,w2,h2)return x1+w1>=x2 and x1<=x2+w2 and y1+h1>=y2 and y1<=y2+h2 end
+function colT(x,y,w,h,tile)local x,y,w,h,tile = x or 0,y or 0,w or 8,h or 8,tile or 0;if mget((x+1)//8,(y+((h/2)+1))//8) == tile or mget((x+(w-1))//8,(y+((h/2)+1))//8) == tile or mget((x+1)//8,(y+(h-1))//8) == tile or mget((x+(w-1))//8,(y+(h-1))//8) == tile then return true end end
 
 function layer(a,b)
 	if a.y == b.y then return b.x < a.x end
@@ -105,24 +104,32 @@ function drawTextBox()
 	rect(dix+8,diy+1,240-16,68-1,3)
 	
 	for i = 1,29 - 1 do
-		spr(511,8*i+dix,diy,11,1)
-		spr(511,8*i+dix,diy+68-8,11,1,0,2)
+		spr(503,8*i+dix,diy,11,1)
+		spr(503,8*i+dix,diy+68-8,11,1,0,2)
 	end
 	for i = 1,(17/2) - 1 do
-		spr(511,dix,8*i+diy,11,1,1,1)
-		spr(511,dix+240-8,8*i+diy,11,1,0,1)
+		spr(503,dix,8*i+diy,11,1,1,1)
+		spr(503,dix+240-8,8*i+diy,11,1,0,1)
+	end
+	for i = 1,16 do
+		spr(504,16*i+dix,diy,11,1)
+		spr(504,16*i+dix,diy+68-8,11,1,0,2)
+	end
+	for i = 1,(17/2) - 5 do
+		spr(504,dix,16*i+diy,11,1,1,1)
+		spr(504,dix+240-8,16*i+diy,11,1,0,1)
 	end
 	
-	spr(510,dix,diy,11,1)
-	spr(510,dix+240-8,diy,11,1,1)
-	spr(510,dix,diy+68-8,11,1,1,2)
-	spr(510,dix+240-8,diy+68-8,11,1,2,1)
+	spr(502,dix,diy,11,1)
+	spr(502,dix+240-8,diy,11,1,1)
+	spr(502,dix,diy+68-8,11,1,1,2)
+	spr(502,dix+240-8,diy+68-8,11,1,2,1)
 	
 end
 
 function updateDialog()
 	if dialog ~= nil and dialog[dialog_pos] ~= nil then
-		if p.y + p.h > 68 then diy = 10 else diy = 68 end
+		if p.y - my > 68 then diy = 10 else diy = 68 end
 		local str = dialog[dialog_pos]
 		local len = string.len(str)
 		
@@ -202,7 +209,7 @@ function drawFade()
 		
 		if f.z < 0 and f.x + 128 < 0 then table.remove(rec,i)music()
 		elseif f.z > 0 and f.x + 128 > 120 then table.remove(rec,i)music()
-		else global_hitpause = 10 end
+		else global_hitpause = 1 end
 		
 		rect(f.x,0,120,136,0)
 		rect(f.x2,0,120,136,0)
@@ -330,7 +337,7 @@ function Mob(x,y)
 		local dx = x1 - s.x
 		local dy = y1 - s.y
 		local dst = math.sqrt((dx^2+dy^2))
-		local a = math.atan2(y1-s.y,x1-s.x)
+		local a = math.atan2(dy,dx)
 		
 		if  s.hitpause > 0 then
 			s.hitpause = s.hitpause - 1
@@ -339,7 +346,12 @@ function Mob(x,y)
 		
 			if dst > s.fov then
 				if dst <= s.range then
-					s:move(math.cos(a)*s.speed,math.sin(a)*s.speed)
+					if math.abs(dx) >= s.speed then
+						s:move(math.cos(a)*s.speed,0)
+					end
+					if math.abs(dy) >= s.speed then
+						s:move(0,math.sin(a)*s.speed)
+					end
 				else
 					s.vx,s.vy = 0,0
 				end
@@ -383,7 +395,7 @@ function Mob(x,y)
 			if p.shield <= 0 then 
 				p:damage(s.dmg)
 				local oldx,oldy = p.x,p.y
-				addParts({x = oldx,y = oldy,mode = 2,text = -s.dmg,vy = -0.5,vx = 0,c = 1})
+				addParts({x = oldx,y = oldy,mode = 2,text = -s.dmg,vy = -0.5,vx = 0,c = 1,max = 40})
 				addParts({x = p.x,y = p.y,c = 1,vx = math.cos(t),vy = math.sin(t)})
 			else
 				addParts({x = p.x,y = p.y,c = 2,vx = math.cos(t),vy = math.sin(t)})
@@ -423,7 +435,7 @@ function Mob(x,y)
 					table.remove(bullet,_)
 					addParts({x = s.x,y = s.y,c = 2,vx = math.cos(t),vy = math.sin(t)})
 					local oldx,oldy = s.x,s.y
-					addParts({x = oldx,y = oldy,mode = 2,text = -p.dmg,vy = -0.5,vx = 0,c = 2})
+					addParts({x = oldx,y = oldy,mode = 2,text = -p.dmg,vy = -0.5,vx = 0,c = 2,max = 40})
 				end
 			end
 			
@@ -432,7 +444,10 @@ function Mob(x,y)
 			if s.hp <= 0 then s.die = true s.sp = anim(s.anims.die) s.hit = 0
 			elseif s.atk then s.sp = anim(s.anims.atk,16)end
 			
+			if colT(s.x,s.y,s.w,s.h,49) then s.die = true end
+			
 			if s.die then
+				s.sp = anim(s.anims.die)
 				for i=0,4 do
 					addParts({x = 2*i+s.x,y = s.y,c = 1,vy = - math.random(1,2)/2})
 				end
@@ -607,13 +622,13 @@ function Player(x,y)
 	s.sp = 256
 	s.c = 11
 	s.f = 1
-	s.dmg = 2
+	s.dmgExtra = 0
+	s.dmg = 1 + s.dmgExtra
 	s.speed = 0.9
 	s.supMove = s.move
 	
 	function s.move(s,dx,dy)
-		s:supMove(dx,dy)
-		
+		s:supMove(dx,dy)		
 		if s.vx ~= 0 then s.f = s.vx<0 and 1 or 0 end
 	end
 	
@@ -632,7 +647,7 @@ function Player(x,y)
 	end
 	
 	function s.onPotion(s)
-		if not s.die and s.hp < s.maxHp then
+		if not s.die and s.hp < s.maxHp  and s.potions > 0 then
 			s.potions = s.potions - 1
 			s.hp = s.hp + 20
 			if s.hp > s.maxHp then s.hp = s.maxHp end
@@ -642,12 +657,13 @@ function Player(x,y)
 	end
 	
 	function s.levelUp(s)
-		if p.exp > 100 then
+		if s.exp > 100 then
 			addDialog({"Level up!!","One more heart has been added to your\nhealth bar"})
-			p.exp = 0
-			p.exp = p.exp + exp
-			p.maxHp = p.maxHp + 1
-			p.hp = p.maxHp
+			s.exp = 0
+			s.exp = s.exp + exp
+			s.maxHp = s.maxHp + 1
+			s.hp = s.maxHp
+			s.dmgExtra = s.dmgExtra + 1
 		end
 	end
 	
@@ -660,8 +676,8 @@ function Player(x,y)
 		if s.hit > 0 then s.hit = s.hit - 1 end
 		if s.shield > 0 then s.shield = s.shield - 1 end
 		if s.ma > 0 then bmax_timer = 10 end
-		if s.da > 0 then s.dmg = math.random(5,10) 
-		else s.dmg = math.random(1,8)end
+		if s.da > 0 then s.dmg = math.random(2+s.dmgExtra,5+s.dmgExtra) 
+		else s.dmg = math.random(1+s.dmgExtra,2+s.dmgExtra)end
 		if s.boost > 0 then s.boost = s.boost - 1 s.speed = 1.6
 		else s.speed = 0.9 end
 		
@@ -900,7 +916,6 @@ function coinExchange(x,y)
 	s.name = "ce"
 	s.sp = 242
 	s.c = 11
-	s.supUpdate = s.update
 	
 	function s.onPickUp(s)
 		local rnd = math.random(20,50)
@@ -1019,7 +1034,7 @@ function Key(x,y)
 	s.c = 11
 	
 	function s.onPickUp(s)
-		addDialog({"You found a key!","Use it to unlock doors."})
+		addDialog({"You found a key!"})
 		p.keys = p.keys + 1
 	end
 	return s
@@ -1382,7 +1397,7 @@ function Hud()
 	for i = 1,11 do
 		spr(506,8*i+(5+8),136-9,11,1)
 	end
-	printb("EXP",((13*9)//2),136-8,3,false,1,true)
+	printb("EXP",((13*9)//2),136-8,3,false,1,true,1)
 	
 	local cb,potx,keyx,monx = 0,8*8,5,210
 	
@@ -1397,10 +1412,9 @@ function Hud()
 	printb("$"..p.money,monx,136-7,3,false,1,false,cb)
 	
 	if p.keys > 0 then
-		rect(keyx,136-9,8,8,3)
-		rectb(keyx,136-9,8,8,2)
+		spr(510,keyx,136-9,11,1)
 		spr(243,keyx,136-9,11,1)
-		printb(p.keys,keyx+10,136-8,12,false,1,true,cb)
+		printb(p.keys,keyx+2,136-15,12,false,1,true,cb)
 	end
 end
 
