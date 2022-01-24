@@ -124,7 +124,6 @@ function drawTextBox()
 	spr(502,dix+240-8,diy,11,1,1)
 	spr(502,dix,diy+68-8,11,1,1,2)
 	spr(502,dix+240-8,diy+68-8,11,1,2,1)
-	
 end
 
 function updateDialog()
@@ -459,7 +458,6 @@ function Mob(x,y)
 	end
 	
 	function s.draw(s)
-		--if s.delete then return end
 		if s.hit > 0 then
 			for i=0,15 do
 				pal(i,2)
@@ -817,6 +815,11 @@ function NPC(name,sp,dialogs,type,spawn)
 			addDialog(dialogs[s.dpos],s.dcolor,s.sp,name)
 			s.over = true
 		end
+		
+		function s.update(s)
+			s.dy = math.sin((t/16))*2
+		end
+		
 		function s.draw(s)
 			if s.sp > 207 and s.sp < 216 and t%32 == 0 then
 				if p.x > s.x then s.f = 0 else s.f = 1 end
@@ -838,7 +841,7 @@ function NPC(name,sp,dialogs,type,spawn)
 			if s.type == "board" then
 				s.over = true
 				if col(p.x,p.y,p.w,p.h,s.x,s.y,s.w+1,s.h) then 
-					sprc(509,s.x,(s.y-10)+math.cos((t/16))*2,11,1)
+					sprc(509,s.x,(s.y-10)+s.dy,11,1)
 				end
 			end
 			
