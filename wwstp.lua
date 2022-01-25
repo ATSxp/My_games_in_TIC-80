@@ -812,8 +812,10 @@ function NPC(name,sp,dialogs,type,spawn)
 		
 		function s.onInteract(s)
 			s.dpos = (s.dpos%#dialogs)+1
+			if s.dpos == #dialogs then
+				s.over = true
+			end
 			addDialog(dialogs[s.dpos],s.dcolor,s.sp,name)
-			s.over = true
 		end
 		
 		function s.update(s)
@@ -1101,7 +1103,8 @@ function Door(x,y)
 	return s
 end
 
-function doorRoom(oldId,nextId,textScreen)
+local enterShop = false
+function doorRoom(oldId,nextId,textScreen,fn)
 	local function func(x,y)
 		local s = Mob(x,y)
 		s.type = "tile"
@@ -1112,6 +1115,7 @@ function doorRoom(oldId,nextId,textScreen)
 		s.spawntile = 1
 		textScreen = textScreen or ""
 		s.enter = false
+		fn = fn or function()end
 		
 		function s.update(s)
 			if btnp(4)and col2(p,s) then
@@ -1125,6 +1129,7 @@ function doorRoom(oldId,nextId,textScreen)
 				s.enter = true
 				fade(-2)
 				showTextScreen(textScreen)
+				fn()
 			end
 			
 			s.dy = math.cos(t/16)*2
@@ -1245,7 +1250,7 @@ spawntiles[128] = Wall(128)
 spawntiles[244] = Door
 spawntiles[230] = safePoint
 spawntiles[232] = doorRoom("1-a","1-b","Boko's Store") -- old door and next door
-spawntiles[233] = doorRoom("1-b","1-a","Dungeon")
+spawntiles[233] = doorRoom("1-b","1-a","Dungeon",function()enterShop = true end)
 spawntiles[234] = doorRoom("2-a","2-b","Zamon's Classroom")
 spawntiles[235] = doorRoom("2-b","2-a","Dungeon")
 spawntiles[248] = doorRoom("!-a","!-b")
@@ -1266,76 +1271,60 @@ spawntiles[177] = maShop
 
 -- NPCs{
 -- Scavenger
-spawntiles[208] = NPC("Scavenger",208,
-{
-	{
-		"Hello handsome travele-...",
-		"PRINCESS!!!! What are you doing here?",
-		"Hum... hmm...",
-		"so...",
-		"you mean the knights who have been\nordered to rescue you so far won't arrive\nand you've decided to leave this dungeon\non your own?",
-		"Hahahahahahahaha!",
-		"this is a beautiful story",
-		"Since you're here, I must warn you, there\nare monsters in front of this hallway,\njust be very careful with them."
-	}
+spawntiles[208] = NPC("Scavenger",208,{
+	{"Hello handsome travele-...",
+	"PRINCESS!!!! What are you doing here?",
+	"Hum... hmm...",
+	"so...",
+	"you mean the knights who have been\nordered to rescue you so far won't arrive\nand you've decided to leave this dungeon\non your own?",
+	"Hahahahahahahaha!",
+	"this is a beautiful story",
+	"Since you're here, I must warn you, there\nare monsters in front of this hallway,\njust be very careful with them."}
 },"npc")
 
 spawntiles[210] = NPC("Boko The Seller",210,{
-	{
-		"Oh! Hello! Apparently it was a great idea\nto come to this dungeon to continue the\nfamily business!",
-		"By the way my name is Boko, I'm the 6th\nsalesman of my family's generation.",
-		"I learned everything I know from my\nfather...",
-		"who learned from my grandfather...",
-		"who learned from my great-grandfather...",
-		"who learned from my\ngreat-great-grandfather...",
-		"who also learned from my\ngreat-great-great-grandfather...",
-		"and finally learned from my\ngreat-great-great-great-grandfather.",
-		"Well... what will you want?",
-	}
+	{"Oh! Hello! Apparently it was a great idea\nto come to this dungeon to continue the\nfamily business!",
+	"By the way my name is Boko, I'm the 6th\nsalesman of my family's generation.",
+	"I learned everything I know from my\nfather...",
+	"who learned from my grandfather...",
+	"who learned from my great-grandfather...",
+	"who learned from my\ngreat-great-grandfather...",
+	"who also learned from my\ngreat-great-great-grandfather...",
+	"and finally learned from my\ngreat-great-great-great-grandfather.",
+	"Well... what will you want?",}
 },"npc")
 
 spawntiles[211] = NPC("Efal",211,{
-	{
-		"Hi, my name is Efal",
-		"I love reading books =)",
-		"Let me tell you a story",
-		"once a customer came here and \"buy\"\nsomething without paying, my dad hates\npeople who want their products for free",
-		"So daddy used that sword on the wall and\nattacked the boy, never saw him again",
-		"Never try to do this to him, always come\nback =).",
-	}
+	{"Hi, my name is Efal",
+	"I love reading books =)",
+	"Let me tell you a story",
+	"once a customer came here and \"buy\"\nsomething without paying, my dad hates\npeople who want their products for free",
+	"So daddy used that sword on the wall and\nattacked the boy, never saw him again",
+	"Never try to do this to him, always come\nback =).",}
 },"npc")
 
 spawntiles[212] = NPC("dummy",208,{{}},"dummy")
 
 spawntiles[213] = NPC("Zamon The Dungeon Historian",213,{
-	{
-		"Did you come to my class?",
-		"No? No time? Okay...",
-		"my name is Zamon, I study the\narchitecture, the items and even the\nbeasts of this dungeon!",
-		"If you happen to\nfind one of my bookstores, try to be\ninterested in my research.",
-	}
+	{"Did you come to my class?",
+	"No? No time? Okay...",
+	"my name is Zamon, I study the\narchitecture, the items and even the\nbeasts of this dungeon!",
+	"If you happen to\nfind one of my bookstores, try to be\ninterested in my research.",}
 },"npc")
 --}NPCs
 
 -- Board 1
 spawntiles[218] = NPC(nil,444,{
-	{
-		"Boko's new store opened today!!!",
-		"come visit us!!"
-	}
+	{"Boko's new store opened today!!!",
+	"come visit us!!",}
 },"board")
 
-spawntiles[216] = NPC(nil,460,
-{
-	{
-		"Welcome to Evil Dungeon, a dungeon with\nthe worst monsters in THE ENTIRE KINGDOM!\nPlease leave your note at the end of the\ndungeon, the Demon King thanks you."
-	}
+spawntiles[216] = NPC(nil,460,{
+	{"Welcome to Evil Dungeon, a dungeon with\nthe worst monsters in THE ENTIRE KINGDOM!\nPlease leave your note at the end of the\ndungeon, the Demon King thanks you."}
 },"board")
 
 spawntiles[217] = NPC(nil,461,{
-	{
-		"A-I-M-E-U-C-U"
-	}
+	{"A-I-M-E-U-C-U"}
 },"board")
 
 function spawnMobs()
