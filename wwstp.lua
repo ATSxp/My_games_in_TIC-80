@@ -101,29 +101,47 @@ function addDialog(di,col,spr,name)
 end
 
 function drawTextBox()
-	rect(dix+8,diy+1,240-16,68-1,3)
+	rect(dix + 8,diy + 1,240 - 16,68 - 1,3)
 	
 	for i = 1,29 - 1 do
-		spr(503,8*i+dix,diy,11,1)
-		spr(503,8*i+dix,diy+68-8,11,1,0,2)
+		spr(503,8 * i + dix,diy,11,1)
+		spr(503,8 * i + dix,diy + 68 - 8,11,1,0,2)
 	end
-	for i = 1,(17/2) - 1 do
-		spr(503,dix,8*i+diy,11,1,1,1)
-		spr(503,dix+240-8,8*i+diy,11,1,0,1)
+	for i = 1,(17 / 2) - 1 do
+		spr(503,dix,8 * i + diy,11,1,1,1)
+		spr(503,dix + 240 - 8,8 * i + diy,11,1,0,1)
 	end
 	for i = 1,16 do
-		spr(504,16*i+dix,diy,11,1)
-		spr(504,16*i+dix,diy+68-8,11,1,0,2)
+		spr(504,16 * i + dix,diy,11,1)
+		spr(504,16 * i + dix,diy + 68 - 8,11,1,0,2)
 	end
-	for i = 1,(17/2) - 5 do
-		spr(504,dix,16*i+diy,11,1,1,1)
-		spr(504,dix+240-8,16*i+diy,11,1,0,1)
+	for i = 1,(17 / 2) - 5 do
+		spr(504,dix,16 * i + diy,11,1,1,1)
+		spr(504,dix + 240 - 8,16 * i + diy,11,1,0,1)
 	end
 	
 	spr(502,dix,diy,11,1)
-	spr(502,dix+240-8,diy,11,1,1)
-	spr(502,dix,diy+68-8,11,1,1,2)
-	spr(502,dix+240-8,diy+68-8,11,1,2,1)
+	spr(502,dix + 240 - 8,diy,11,1,1)
+	spr(502,dix,diy + 68 - 8,11,1,1,2)
+	spr(502,dix + 240 - 8,diy + 68 - 8,11,1,2,1)
+	
+	if dialog_name ~= nil then
+		-- icon
+		for i = 0,15 do
+			pal(i,3)
+			spr(dialog_spr,(dix + 2) - 1,diy + (diy == 68 and - 33 or (8 * 8) + 5),11,4)
+			spr(dialog_spr,(dix + 2) + 1,diy + (diy == 68 and - 33 or (8 * 8) + 5),11,4)
+			spr(dialog_spr,(dix + 2),diy + (diy == 68 and - 33 or (8 * 8) + 5) - 1,11,4)
+			spr(dialog_spr,(dix + 2),diy + (diy == 68 and - 33 or (8 * 8) + 5) + 1,11,4)
+		end
+		pal()
+		spr(dialog_spr,dix + 2,diy + (diy == 68 and - 33 or (8 * 8) + 5),11,4)
+		-- name 
+		local w = print(dialog_name,0,- 6,0,false,1,true)
+		rect(dix + 37,diy + (diy == 68 and - 12 or (8 * 8) + 4),w + 5,11,3)
+		rectb(dix + 37,diy + (diy == 68 and - 12 or (8 * 8) + 4),w + 5,11,2)
+		printb(dialog_name,dix + 40,diy + (diy == 68 and - 9 or (8 * 8) + 7),2,false,1,true,0)
+	end
 end
 
 function updateDialog()
@@ -143,33 +161,11 @@ function updateDialog()
 		
 		if dialog_pos <= #dialog then
 			drawTextBox()
-			if dialog_name ~= nil then
-				-- icon
-				--rect(dix,diy+(diy == 68 and -32 or (8*8)+4),32,32,3)
-				for i = 0,15 do
-					pal(i,3)
-					spr(dialog_spr,(dix+2)-1,diy+(diy == 68 and -33 or (8*8)+5),11,4)
-					spr(dialog_spr,(dix+2)+1,diy+(diy == 68 and -33 or (8*8)+5),11,4)
-					spr(dialog_spr,(dix+2),diy+(diy == 68 and -33 or (8*8)+5)-1,11,4)
-					spr(dialog_spr,(dix+2),diy+(diy == 68 and -33 or (8*8)+5)+1,11,4)
-				end
-				pal()
-				spr(dialog_spr,dix+2,diy+(diy == 68 and -33 or (8*8)+5),11,4)
-				--rectb(dix,diy+(diy == 68 and -32 or (8*8)+4),32,32,2)
-				-- name 
-				local w = print(dialog_name,0,-6,0,false,1,true)
-				rect(dix+37,diy+(diy == 68 and -11 or (8*8)+4),w+5,11,3)
-				rectb(dix+37,diy+(diy == 68 and -11 or (8*8)+4),w+5,11,2)
-				printb(dialog_name,dix+40,diy+(diy == 68 and -8 or (8*8)+7),2,false,1,true,0)
-			end
-			--print(string.sub(str,1,text_pos),dix+10,diy+10,dialog_color)
-			printb(string.sub(str,1,text_pos),dix+10,diy+10,dialog_color,false,1,false,2)
-			--spr(anim({507,508},24),dix+240-24,diy+68-34,11,2)
-			spr(anim({507,508},24),dix+240-24,diy+68-22,11,2)
+			printb(string.sub(str,1,text_pos),dix + 10,diy + 10,dialog_color,false,1,false,2)
+			spr(anim({507,508},24),dix + 240 - 24,diy + 68 - 22,11,2)
 			global_hitpause = 1
-			if text_pos < len and t%4==0 then text_pos = text_pos + 1 end
+			if text_pos < len and t % 4 == 0 then text_pos = text_pos + 1 end
 		end
-		
 	else
 		dialog_pos = 1
 		dialog = nil
@@ -178,17 +174,16 @@ end
 
 function Interact(v)
 	for _,m in ipairs(mobs)do
-		local hit = col(v.x,v.y,v.w,v.h,m.x,m.y,m.w+1,m.h)
-		if m.onInteract ~= nil and 
-		hit then
+		local hit = col(v.x,v.y,v.w,v.h,m.x,m.y,m.w + 1,m.h)
+		if m.onInteract ~= nil and hit then
 			m:onInteract()
 		end
 	end
 end
 
 -- I learned how to make this kind 
--- of effect in the game "Antvania" created 
--- by Muhammad Fauzan 
+-- of effect in the game "Antvania" 
+-- created by Muhammad Fauzan 
 -- please play Antvania, here: https://tic80.com/play?cart=2438
 function fade(mz,x,x2,mode)
 	local f = {
@@ -214,8 +209,8 @@ function drawFade()
 		rect(f.x2,0,120,136,0)
 		
 		for j = 0,16 do
-			spr(64,f.x+120,8*j,11,1)
-			spr(64,f.x2-8,8*j,11,1,1)
+			spr(64,f.x + 120,8 * j,11,1)
+			spr(64,f.x2 - 8,8 * j,11,1,1)
 		end
 		
 	end
@@ -231,25 +226,25 @@ function addParts(tbl)table.insert(parts,tbl)end
 function drawParts()
 	for _,v in ipairs(parts)do
 		if v.mode == 1 then
-			circ(v.x-mx,v.y-my,v.s or 1,v.c or 0)
+			circ(v.x - mx,v.y - my,v.s or 1,v.c or 0)
 		elseif v.mode == 2 then
-			printb(v.text or nil,v.x-mx,v.y-my,v.c or 0,v.fix or false,v.scale or 1,v.small or false)
+			printb(v.text or nil,v.x - mx,v.y - my,v.c or 0,v.fix or false,v.scale or 1,v.small or false)
 		elseif v.mode == 3 then
-			rect(v.x-mx,v.y-my,v.w or 1,v.h or 1,v.c or 0)
+			rect(v.x - mx,v.y - my,v.w or 1,v.h or 1,v.c or 0)
 		elseif v.mode == 4 then
-			circb(v.x-mx,v.y-my,v.s or 1,v.c or 0)
+			circb(v.x - mx,v.y - my,v.s or 1,v.c or 0)
 		elseif v.mode == 5 then
-			circ(v.x-mx,v.y-my,v.s or 1,v.c or 0)
-			circb(v.x-mx,v.y-my,v.s or 1,v.cb or 0)
+			circ(v.x - mx,v.y - my,v.s or 1,v.c or 0)
+			circb(v.x - mx,v.y - my,v.s or 1,v.cb or 0)
 		end
 	end
 end
 
 function updateParts()
 	for i,v in ipairs(parts)do
-		v.t = (v.t and v.t+1)or 0
-		v.x = v.x + math.random(-1,1)
-		v.y = v.y + math.random(-1,1)
+		v.t = (v.t and v.t + 1)or 0
+		v.x = v.x + math.random(- 1,1)
+		v.y = v.y + math.random(- 1,1)
 		v.x = v.x + (v.vx or 0)
 		v.y = v.y + (v.vy or 0)
 		v.mode = v.mode or 1
@@ -271,17 +266,15 @@ end
 
 function bulletUpdate()
 	for i,v in ipairs(bullet)do
-		--addParts({x = v.x+(v.vx<0 and 8 or 0),y = v.y+4,c = p.da and  math.random(8,10)or math.random(1,3),max = 10})
-		
 		local x = v.x + v.vx
 		local y = v.y + v.vy
 		local w = v.w
 		local h = v.h
 		if 
-			sol(x,y+(h/2+1))or 
-			sol(x+(w-1),y+(h/2+1))or 
-			sol(x,y+(h-1))or
-			sol(x+(w-1),y+(h-1))then
+			sol(x,y +(h / 2 + 1))or 
+			sol(x + (w - 1),y + (h / 2 + 1))or 
+			sol(x,y + (h - 1))or
+			sol(x + (w - 1),y + (h - 1))then
 			local Oldx,Oldy = v.x,v.y
 			addParts({x = Oldx,y = Oldy,s = math.random(2,5),c = math.random(0,2),vx = math.random(-1,1),vy = math.random(-1,1)})
 			addParts({mode = 4,x = Oldx,y = Oldy,s = math.random(2,5),c = math.random(0,2),vx = math.random(-1,1),vy = math.random(-1,1)})
@@ -296,7 +289,7 @@ function bulletUpdate()
 		if v.vy > 0 and v.vx < 0 and bChange then v.r = 1 end -- down/left
 		if v.vy > 0 and v.vx > 0 and bChange then v.r = 1 end -- down/right
 		
-		if v.x-mx < 0 or v.x-mx > 240 or v.y-my < 0 or v.y-my > 136 then table.remove(bullet,i) end
+		if v.x - mx < 0 or v.x - mx > 240 or v.y - my < 0 or v.y - my > 136 then table.remove(bullet,i) end
 		
 		v.x = v.x + v.vx
 		v.y = v.y + v.vy
@@ -607,7 +600,7 @@ function Player(x,y)
 	local s = Mob(x,y)
 	s.type = "hero"
 	s.name = "princess"
-	s.money = 100
+	s.money = 0
 	s.maxHp = 5
 	s.hp = s.maxHp
 	s.exp = 0
@@ -1103,8 +1096,7 @@ function Door(x,y)
 	return s
 end
 
-local enterShop = false
-function doorRoom(oldId,nextId,textScreen,fn)
+function doorRoom(oldId,nextId,textScreen)
 	local function func(x,y)
 		local s = Mob(x,y)
 		s.type = "tile"
@@ -1115,7 +1107,6 @@ function doorRoom(oldId,nextId,textScreen,fn)
 		s.spawntile = 1
 		textScreen = textScreen or ""
 		s.enter = false
-		fn = fn or function()end
 		
 		function s.update(s)
 			if btnp(4)and col2(p,s) then
@@ -1129,7 +1120,6 @@ function doorRoom(oldId,nextId,textScreen,fn)
 				s.enter = true
 				fade(-2)
 				showTextScreen(textScreen)
-				fn()
 			end
 			
 			s.dy = math.cos(t/16)*2
@@ -1236,98 +1226,98 @@ function Wall(sp)
 	return func
 end
 
-spawntiles = {}
--- Mobs
-spawntiles[192] = Goblin
-spawntiles[193] = Bat
-spawntiles[194] = Skeleton
-spawntiles[195] = Cerberus
-spawntiles[209] = Fairy
-
-spawntiles[160] = Wall(446)
-spawntiles[161] = Wall(447)
-spawntiles[128] = Wall(128)
-spawntiles[244] = Door
-spawntiles[230] = safePoint
-spawntiles[232] = doorRoom("1-a","1-b","Boko's Store") -- old door and next door
-spawntiles[233] = doorRoom("1-b","1-a","Dungeon",function()enterShop = true end)
-spawntiles[234] = doorRoom("2-a","2-b","Zamon's Classroom")
-spawntiles[235] = doorRoom("2-b","2-a","Dungeon")
-spawntiles[248] = doorRoom("!-a","!-b")
-spawntiles[249] = doorRoom("!-b","!-a")
-
--- Items
-spawntiles[241] = Coin
-spawntiles[242] = coinExchange
-spawntiles[224] = Chest
-spawntiles[225] = Potion
-spawntiles[226] = Boost
-spawntiles[227] = multipleArrows
-spawntiles[228] = diamondArrow
-spawntiles[243] = Key
-spawntiles[229] = magicShield
-spawntiles[176] = potionShop
-spawntiles[177] = maShop
-
--- NPCs{
--- Scavenger
-spawntiles[208] = NPC("Scavenger",208,{
-	{"Hello handsome travele-...",
-	"PRINCESS!!!! What are you doing here?",
-	"Hum... hmm...",
-	"so...",
-	"you mean the knights who have been\nordered to rescue you so far won't arrive\nand you've decided to leave this dungeon\non your own?",
-	"Hahahahahahahaha!",
-	"this is a beautiful story",
-	"Since you're here, I must warn you, there\nare monsters in front of this hallway,\njust be very careful with them."}
-},"npc")
-
-spawntiles[210] = NPC("Boko The Seller",210,{
-	{"Oh! Hello! Apparently it was a great idea\nto come to this dungeon to continue the\nfamily business!",
-	"By the way my name is Boko, I'm the 6th\nsalesman of my family's generation.",
-	"I learned everything I know from my\nfather...",
-	"who learned from my grandfather...",
-	"who learned from my great-grandfather...",
-	"who learned from my\ngreat-great-grandfather...",
-	"who also learned from my\ngreat-great-great-grandfather...",
-	"and finally learned from my\ngreat-great-great-great-grandfather.",
-	"Well... what will you want?",}
-},"npc")
-
-spawntiles[211] = NPC("Efal",211,{
-	{"Hi, my name is Efal",
-	"I love reading books =)",
-	"Let me tell you a story",
-	"once a customer came here and \"buy\"\nsomething without paying, my dad hates\npeople who want their products for free",
-	"So daddy used that sword on the wall and\nattacked the boy, never saw him again",
-	"Never try to do this to him, always come\nback =).",}
-},"npc")
-
-spawntiles[212] = NPC("dummy",208,{{}},"dummy")
-
-spawntiles[213] = NPC("Zamon The Dungeon Historian",213,{
-	{"Did you come to my class?",
-	"No? No time? Okay...",
-	"my name is Zamon, I study the\narchitecture, the items and even the\nbeasts of this dungeon!",
-	"If you happen to\nfind one of my bookstores, try to be\ninterested in my research.",}
-},"npc")
---}NPCs
-
--- Board 1
-spawntiles[218] = NPC(nil,444,{
-	{"Boko's new store opened today!!!",
-	"come visit us!!",}
-},"board")
-
-spawntiles[216] = NPC(nil,460,{
-	{"Welcome to Evil Dungeon, a dungeon with\nthe worst monsters in THE ENTIRE KINGDOM!\nPlease leave your note at the end of the\ndungeon, the Demon King thanks you."}
-},"board")
-
-spawntiles[217] = NPC(nil,461,{
-	{"A-I-M-E-U-C-U"}
-},"board")
-
+local spawntiles = {}
 function spawnMobs()
+	-- Mobs
+	spawntiles[192] = Goblin
+	spawntiles[193] = Bat
+	spawntiles[194] = Skeleton
+	spawntiles[195] = Cerberus
+	spawntiles[209] = Fairy
+	
+	spawntiles[160] = Wall(446)
+	spawntiles[161] = Wall(447)
+	spawntiles[128] = Wall(128)
+	spawntiles[244] = Door
+	spawntiles[230] = safePoint
+	spawntiles[232] = doorRoom("1-a","1-b","Boko's Store") -- old door and next door
+	spawntiles[233] = doorRoom("1-b","1-a","Dungeon")
+	spawntiles[234] = doorRoom("2-a","2-b","Zamon's Classroom")
+	spawntiles[235] = doorRoom("2-b","2-a","Dungeon")
+	spawntiles[248] = doorRoom("!-a","!-b")
+	spawntiles[249] = doorRoom("!-b","!-a")
+	
+	-- Items
+	spawntiles[241] = Coin
+	spawntiles[242] = coinExchange
+	spawntiles[224] = Chest
+	spawntiles[225] = Potion
+	spawntiles[226] = Boost
+	spawntiles[227] = multipleArrows
+	spawntiles[228] = diamondArrow
+	spawntiles[243] = Key
+	spawntiles[229] = magicShield
+	spawntiles[176] = potionShop
+	spawntiles[177] = maShop
+	
+	-- NPCs
+	-- Scavenger
+	spawntiles[208] = NPC("Scavenger",208,{
+		{"Hello handsome travele-...",
+		"PRINCESS!!!! What are you doing here?",
+		"Hum... hmm...",
+		"so...",
+		"you mean the knights who have been\nordered to rescue you so far won't arrive\nand you've decided to leave this dungeon\non your own?",
+		"Hahahahahahahaha!",
+		"this is a beautiful story",
+		"Since you're here, I must warn you, there\nare monsters in front of this hallway,\njust be very careful with them."}
+	},"npc")
+	
+	spawntiles[210] = NPC("Boko The Seller",210,{
+		{"Oh! Hello! Apparently it was a great idea\nto come to this dungeon to continue the\nfamily business!",
+		"By the way my name is Boko, I'm the 6th\nsalesman of my family's generation.",
+		"I learned everything I know from my\nfather...",
+		"who learned from my grandfather...",
+		"who learned from my great-grandfather...",
+		"who learned from my\ngreat-great-grandfather...",
+		"who also learned from my\ngreat-great-great-grandfather...",
+		"and finally learned from my\ngreat-great-great-great-grandfather.",
+		"Well... what will you want?",}
+	},"npc")
+	
+	spawntiles[211] = NPC("Efal",211,{
+		{"Hi, my name is Efal",
+		"I love reading books =)",
+		"Let me tell you a story",
+		"once a customer came here and \"buy\"\nsomething without paying, my dad hates\npeople who want their products for free",
+		"So daddy used that sword on the wall and\nattacked the boy, never saw him again",
+		"Never try to do this to him, always come\nback =).",}
+	},"npc")
+	
+	spawntiles[212] = NPC("dummy",208,{{}},"dummy")
+	
+	spawntiles[213] = NPC("Zamon The Dungeon Historian",213,{
+		{"Did you come to my class?",
+		"No? No time? Okay...",
+		"my name is Zamon, I study the\narchitecture, the items and even the\nbeasts of this dungeon!",
+		"If you happen to\nfind one of my bookstores, try to be\ninterested in my research.",}
+	},"npc")
+	
+	-- Boards/notes etc
+	-- Board 1
+	spawntiles[218] = NPC(nil,444,{
+		{"Boko's new store opened today!!!",
+		"come visit us!!",}
+	},"board")
+	
+	spawntiles[216] = NPC(nil,460,{
+		{"Welcome to Evil Dungeon, a dungeon with\nthe worst monsters in THE ENTIRE KINGDOM!\nPlease leave your note at the end of the\ndungeon, the Demon King thanks you."}
+	},"board")
+	
+	spawntiles[217] = NPC(nil,461,{
+		{"A-I-M-E-U-C-U"}
+	},"board")
+
 	for x = 0,240 do
 		for y = 0,136 do
 			local spawn = spawntiles[mget(x,y)]
@@ -1338,9 +1328,6 @@ function spawnMobs()
 			end
 		end
 	end
-end
-
-function eventsUpdate()
 end
 
 function buttonUpdate()
