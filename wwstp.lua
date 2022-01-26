@@ -11,7 +11,7 @@ t = 0
 
 _GAME = {}
 _GAME.on = false
-_GAME.state =	5
+_GAME.state =	0
 
 local exp = math.random(1,10)
 
@@ -1487,8 +1487,8 @@ local loadAnim = {
 	{257,258}, -- Princess
 }
 local loadMsg = {
-	"Use the fairy to activate the runes to\nrestore yourself",
-	"Are you in need of items?  Go to the Boko store!",
+	[1] = {"Use the fairy to activate the runes to","restore yourself"},
+	[2] = {"Are you in need of items?","Go to the Boko store!"},
 }
 local indexLoadAnim = math.random(1,#loadAnim)
 local indexLoadMsg = math.random(1,#loadMsg)
@@ -1510,7 +1510,9 @@ function Loading()
 	pal()
 	spr(anim(loadAnim[indexLoadAnim],16),240-17,136-y+dy,11,2,1)
 	
-	printc(loadMsg[indexLoadMsg],120,110,3,false,1,true,1)
+	for i=1,#loadMsg[indexLoadMsg] do
+		printc(loadMsg[indexLoadMsg][i],120,8*i+110,3,false,1,true,1)
+	end
 	--print(indexLoadMsg,10,10,3)
 	
 	if loadingTimer < 0 then
