@@ -11,7 +11,7 @@ t = 0
 
 _GAME = {}
 _GAME.on = false
-_GAME.state =	1
+_GAME.state =	0
 
 local exp = math.random(1,10)
 
@@ -1511,8 +1511,9 @@ local loadAnim = {
 	{257,258}, -- Princess
 }
 local loadMsg = {
-	[1] = {"Use the fairy to activate the runes to","restore yourself"},
-	[2] = {"Are you in need of items?","Go to the Boko store!"},
+	{"Use the fairy to activate the runes to","restore yourself"},
+	{"Are you in need of items?","Go to the Boko store!"},
+	{"The runes that look like an X are runes used in rituals","to protect yourself from monsters, if you are running away from a","monster it will definitely be of great help."},
 }
 local indexLoadAnim = math.random(1,#loadAnim)
 local indexLoadMsg = math.random(1,#loadMsg)
@@ -1535,7 +1536,7 @@ function Loading()
 	spr(anim(loadAnim[indexLoadAnim],16),240-17,136-y+dy,11,2,1)
 	
 	for i=1,#loadMsg[indexLoadMsg] do
-		printc(loadMsg[indexLoadMsg][i],120,8*i+110,3,false,1,true,1)
+		printc(loadMsg[indexLoadMsg][i],120,8*i+90,3,false,1,true,1)
 	end
 	--print(indexLoadMsg,10,10,3)
 	
@@ -1598,15 +1599,9 @@ function gameOver()
 		gy = gy + (gy<60 and 1 or 0)
 		local w = printb(str,0,-16,3,false,2,false,1)
 		
-		for d=1,#dirs do
-			for i=1,15 do
-				pal(i,0)
-			end
-			spr(382,dirs[d][1]+(240-32)//2,dirs[d][2]+25,11,2,0,0,2,2)
-			pal()
-		end
+		spr(380,(240-(16*4))//2,11,11,4,0,0,2,2)
 		spr(382,(240-32)//2,25,11,2,0,0,2,2)
-		printc(str,120,gy,3,false,2,false,1)
+		printc(str,120,gy,3,false,2,false)
 		printc(gy == 60 and str2 or "",120,80,2)
 		rect(0,by,240,136,0)
 		for i=0,29 do
@@ -1650,6 +1645,7 @@ function Debug()
 end
 
 function Credits()
+	music()
 	for c=1,3 do
 		pal(c,c-1)
 	end
@@ -1682,6 +1678,8 @@ function Credits()
 	for i=1,#credit do
 		printc(credit[i],120,8*i,3,false,1,true,1)
 	end
+	
+	if btnp(5)then _GAME.state = STATE_MENU end
 	Debug()
 end
 
