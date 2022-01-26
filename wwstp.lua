@@ -630,7 +630,7 @@ function Player(x,y)
 	s.type = "hero"
 	s.name = "princess"
 	s.money = 0
-	s.maxHp = 5
+	s.maxHp = 1
 	s.hp = s.maxHp
 	s.exp = 0
 	s.keys = 0
@@ -646,8 +646,6 @@ function Player(x,y)
 	s.dmg = 1 + s.dmgExtra
 	s.speed = 0.9
 	s.supMove = s.move
-	s.sx = s.x
-	s.sy = s.y
 	
 	function s.move(s,dx,dy)
 		s:supMove(dx,dy)		
@@ -924,6 +922,7 @@ function Coin(x,y)
 	s.name = "coin"
 	s.sp = 241
 	s.c = 11
+	s.speed = 2
 	s.supUpdate = s.update
 	
 	function s.onPickUp(s)
@@ -1590,43 +1589,38 @@ function optionUpdate()
 	cls()
 end
 
-function respawn()
-	p.x,p.y = p.spawnx*8,p.spawny*8
-	p.die = false
-	p.hp = p.maxHp
-	
-	for i=#mobs,1,-1 do
-		local m = mobs[i]
-		if m ~= p then
-			m:despawn()
-			table.remove(mobs,i)
-		end
-	end
-	
-	for _,m in ipairs(mobs)do
-		if m.name ~= "princess" then
-			m.x,m.y = m.spawnx,m.spawny
-		end
-	end
-	
-	spawnMobs()
-end
-
-local gy = -16
+local gy,by,b = -16,-136-8,0
 function gameOver()
 	local str,str2 = "You die","Press Z to restart"
 	if p.hp <= 0 then
 		pal()
-		global_hitpause = 1
 		textOn = true
 		gy = gy + (gy<60 and 1 or 0)
 		local w = printb(str,0,-16,3,false,2,false,1)
+		
+		for d=1,#dirs do
+			for i=1,15 do
+				pal(i,0)
+			end
+			spr(382,dirs[d][1]+(240-32)//2,dirs[d][2]+25,11,2,0,0,2,2)
+			pal()
+		end
+		spr(382,(240-32)//2,25,11,2,0,0,2,2)
 		printc(str,120,gy,3,false,2,false,1)
 		printc(gy == 60 and str2 or "",120,80,2)
+		rect(0,by,240,136,0)
+		for i=0,29 do
+			spr(65,8*i,by+136,11,1)
+		end
+		by = by + b
 		
 		if btnp(4) and gy == 60 then
+			b = 2
+		end
+		
+		if by > - 1 then
 			reset()
-			_GAME.state = STATE_GAME
+			by = -136
 		end
 	end
 end
