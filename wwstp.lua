@@ -11,7 +11,7 @@ t = 0
 
 _GAME = {}
 _GAME.on = false
-_GAME.state =	0
+_GAME.state =	1
 
 local exp = math.random(1,10)
 
@@ -323,6 +323,8 @@ function Mob(x,y)
 	s.hitpause = 0
 	s.range = 0
 	s.fov = 12
+	s.minDelayAtk = 30
+	s.maxDelayAtk = 90
 	s.x = x or 0
 	s.y = y or 0
 	s.w = 8
@@ -405,7 +407,25 @@ function Mob(x,y)
 		end
 	end
 	
+	local rnd = math.random(32,128)
 	function s.update(s)
+		s:updateEnemy()
+	end
+	
+	function s.draw(s)
+		if s.hit > 0 then
+			for i=0,15 do
+				pal(i,2)
+			end
+		end
+		if s.timer < 105 and (s.timer//3)%2 == 0 then
+			sprc(271,s.x,s.y+3,0,1)
+			sprc(s.sp,s.x,s.y,s.c,1,s.f)
+		end
+		pal()
+	end
+	
+	function s.updateEnemy(s)
 		if s.type == "enemy" then
 		
 			if s.die then s.vanish = s.vanish + 1 end
@@ -423,10 +443,10 @@ function Mob(x,y)
 				if p.x > s.x then s.f = 0 else s.f = 1 end
 				if t > s.t then
 					s:attack()
-					s.t = t + math.random(30,90)
+					s.t = t + math.random(s.minDelayAtk,s.maxDelayAtk)
 				end
 			else
-				s.t = t + math.random(0,90)
+				s.t = t + math.random(0,s.maxDelayAtk)
 			end
 			
 			for _,v in ipairs(bullet)do
@@ -457,19 +477,6 @@ function Mob(x,y)
 			
 		end
 	end
-	
-	function s.draw(s)
-		if s.hit > 0 then
-			for i=0,15 do
-				pal(i,2)
-			end
-		end
-		if s.timer < 105 and (s.timer//3)%2 == 0 then
-			sprc(271,s.x,s.y+3,0,1)
-			sprc(s.sp,s.x,s.y,s.c,1,s.f)
-		end
-		pal()
-	end
 	return s
 end
 
@@ -489,6 +496,8 @@ function Goblin(x,y)
 	s.dmg = math.random(1,2)
 	s.range = 50
 	s.speed = 0.5
+	s.minDelayAtk = 30
+	s.maxDelayAtk = 60
 	s.supUpdate = s.update
 	
 	function s.update(s)
@@ -512,17 +521,19 @@ function Bat(x,y)
 	s.anims = {
 		idle = {320,321},
 		walk = {320,321},
-		die = {323},
-		atk = {322},
+		die = {324},
+		atk = {322,323},
 	}
-	s.hp = math.random(5,8)
+	s.hp = math.random(1,2)
 	s.range = 60
 	s.speed = 0.5
 	s.dmg = 1
+	s.minDelayAtk = 10
+	s.maxDelayAtk = 50
 	s.supUpdate = s.update
 	
 	function s.update(s)
-		s:supUpdate()	
+		s:supUpdate()
 		if not s.die then			
 			s:seePlayer(p.x,p.y)
 			s.dy = math.sin(t/8)*2
@@ -563,6 +574,8 @@ function Skeleton(x,y)
 	s.speed = 0.3
 	s.range = 20
 	s.dmg = 4
+	s.minDelayAtk = 0
+	s.maxDelayAtk = 190
 	s.supUpdate = s.update
 	
 	function s.update(s)
@@ -591,6 +604,8 @@ function Cerberus(x,y)
 	s.range = 80
 	s.speed = 1
 	s.dmg = math.random(1,3)
+	s.minDelayAtk = 30
+	s.maxDelayAtk = 60
 	s.supUpdate = s.update
 	
 	function s.update(s)
@@ -1247,12 +1262,15 @@ function spawnMobs()
 		[160] = Wall(446),
 		[161] = Wall(447),
 		[128] = Wall(128),
+		[162] = Wall(415),
 		[244] = Door,
 		[230] = safePoint,
 		[232] = doorRoom("1-a","1-b","Boko's Store"), -- old door and next door
 		[233] = doorRoom("1-b","1-a","Dungeon"),
 		[234] = doorRoom("2-a","2-b","Zamon's Classroom"),
 		[235] = doorRoom("2-b","2-a","Dungeon"),
+		[250] = doorRoom("3-a","3-b","Zamon's library"),
+		[250] = doorRoom("3-b","3-a","Dungeon"),
 		[248] = doorRoom("!-a","!-b"),
 		[249] = doorRoom("!-b","!-a"),
 		
@@ -1280,8 +1298,7 @@ function spawnMobs()
 			"Hahahahahahahaha!",
 			"this is a beautiful story",
 			"Since you're here, I must warn you, there\nare monsters in front of this hallway,\njust be very careful with them."}
-		},"npc"),
-		
+		},"npc"),		
 		[210] = NPC("Boko The Seller",210,{
 			{"Oh! Hello! Apparently it was a great idea\nto come to this dungeon to continue the\nfamily business!",
 			"By the way my name is Boko, I'm the 6th\nsalesman of my family's generation.",
@@ -1292,8 +1309,7 @@ function spawnMobs()
 			"who also learned from my\ngreat-great-great-grandfather...",
 			"and finally learned from my\ngreat-great-great-great-grandfather.",
 			"Well... what will you want?",}
-		},"npc"),
-		
+		},"npc"),		
 		[211] = NPC("Efal",211,{
 			{"Hi, my name is Efal",
 			"I love reading books =)",
@@ -1302,9 +1318,7 @@ function spawnMobs()
 			"So daddy used that sword on the wall and\nattacked the boy, never saw him again",
 			"Never try to do this to him, always come\nback =).",}
 		},"npc"),
-		
 		[212] = NPC("dummy",208,{{}},"dummy"),
-		
 		[213] = NPC("Zamon The Dungeon Historian",213,{
 			{"Did you come to my class?",
 			"No? No time? Okay...",
@@ -1318,14 +1332,15 @@ function spawnMobs()
 			{"Boko's new store opened today!!!",
 			"come visit us!!",}
 		},"board"),
-		
 		[216] = NPC(nil,460,{
 			{"Welcome to Evil Dungeon, a dungeon with\nthe worst monsters in THE ENTIRE KINGDOM!\nPlease leave your note at the end of the\ndungeon, the Demon King thanks you."}
 		},"board"),
-		
 		[217] = NPC(nil,461,{
 			{"A-I-M-E-U-C-U"}
 		},"board"),
+		[156] = NPC(nil,156,{
+			{"bucetinha"}
+		},"board")
 	}
 	for x = 0,240 do
 		for y = 0,136 do
@@ -1601,7 +1616,8 @@ function Credits()
 			m:draw()
 		end 
 	end
-	
+	updateParts()
+	drawParts()
 	local credit = {
 		"-- Creator - Game - twitter --",
 		"",
