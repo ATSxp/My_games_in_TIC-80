@@ -11,7 +11,7 @@ t = 0
 
 _GAME = {}
 _GAME.on = false
-_GAME.state =	1
+_GAME.state =	5
 
 local exp = math.random(1,10)
 
@@ -56,12 +56,17 @@ function sprc(id,x,y,c,s,f,r,w,h)
 	spr(id,x-mx,y-my,c,s,f,r,w,h)
 end
 
+dirs = {
+	{1,0},{0,1},{1,1},{-1,-1},{-1,0},{0,-1},{-1,1},{1,-1}
+}
 function printb(text,x,y,c,fix,s,sm,cb)
 	local fix,s,sm,cb = fix or false,s or 1,sm or false,cb or 0
-	print(text,x-1,y,cb,fix,s,sm)
+	--[[print(text,x-1,y,cb,fix,s,sm)
 	print(text,x+1,y,cb,fix,s,sm)
-	print(text,x,y-1,cb,fix,s,sm)
-	print(text,x,y+1,cb,fix,s,sm)
+	print(text,x,y-1,cb,fix,s,sm)--]]
+	for d=1,#dirs do
+		print(text,dirs[d][1]+x,dirs[d][2]+y,cb,fix,s,sm)
+	end
 	print(text,x,y,c,fix,s,sm)
 	return print(text,x,y,c,fix,s,sm,cb)
 end
@@ -88,6 +93,7 @@ function layer(a,b)
 	return a.y < b.y
 end
 
+local textOn = false
 -- If you are curious to know how this 
 -- Text Box system works, read my tutorial 
 -- here: https://github.com/nesbox/TIC-80/wiki/How-to-make-Text-box
@@ -127,12 +133,11 @@ function drawTextBox()
 	
 	if dialog_name ~= nil then
 		-- icon
-		for i = 0,15 do
-			pal(i,3)
-			spr(dialog_spr,(dix + 2) - 1,diy + (diy == 68 and - 33 or (8 * 8) + 5),11,4)
-			spr(dialog_spr,(dix + 2) + 1,diy + (diy == 68 and - 33 or (8 * 8) + 5),11,4)
-			spr(dialog_spr,(dix + 2),diy + (diy == 68 and - 33 or (8 * 8) + 5) - 1,11,4)
-			spr(dialog_spr,(dix + 2),diy + (diy == 68 and - 33 or (8 * 8) + 5) + 1,11,4)
+		for d=1,#dirs do
+			for i = 0,15 do
+				pal(i,3)
+				spr(dialog_spr,dirs[d][1]+(dix + 2),dirs[d][2]+diy + (diy == 68 and - 33 or (8 * 8) + 5),11,4)
+			end
 		end
 		pal()
 		spr(dialog_spr,dix + 2,diy + (diy == 68 and - 33 or (8 * 8) + 5),11,4)
@@ -161,14 +166,16 @@ function updateDialog()
 		
 		if dialog_pos <= #dialog then
 			drawTextBox()
-			printb(string.sub(str,1,text_pos),dix + 10,diy + 10,dialog_color,false,1,false,2)
+			printb(string.sub(str,1,text_pos),dix + 10,diy + 10,2,false,1,false)
 			spr(anim({507,508},24),dix + 240 - 24,diy + 68 - 22,11,2)
 			global_hitpause = 1
 			if text_pos < len and t % 4 == 0 then text_pos = text_pos + 1 end
 		end
+		textOn = true
 	else
 		dialog_pos = 1
 		dialog = nil
+		textOn = false
 	end
 end
 
@@ -248,6 +255,7 @@ function updateParts()
 		v.x = v.x + (v.vx or 0)
 		v.y = v.y + (v.vy or 0)
 		v.mode = v.mode or 1
+		v.map = v.map or true
 		
 		if v.t > (v.max or 20) then table.remove(parts,i) end
 	end
@@ -1226,98 +1234,99 @@ function Wall(sp)
 	return func
 end
 
-local spawntiles = {}
+--local spawntiles = {}
 function spawnMobs()
-	-- Mobs
-	spawntiles[192] = Goblin
-	spawntiles[193] = Bat
-	spawntiles[194] = Skeleton
-	spawntiles[195] = Cerberus
-	spawntiles[209] = Fairy
-	
-	spawntiles[160] = Wall(446)
-	spawntiles[161] = Wall(447)
-	spawntiles[128] = Wall(128)
-	spawntiles[244] = Door
-	spawntiles[230] = safePoint
-	spawntiles[232] = doorRoom("1-a","1-b","Boko's Store") -- old door and next door
-	spawntiles[233] = doorRoom("1-b","1-a","Dungeon")
-	spawntiles[234] = doorRoom("2-a","2-b","Zamon's Classroom")
-	spawntiles[235] = doorRoom("2-b","2-a","Dungeon")
-	spawntiles[248] = doorRoom("!-a","!-b")
-	spawntiles[249] = doorRoom("!-b","!-a")
-	
-	-- Items
-	spawntiles[241] = Coin
-	spawntiles[242] = coinExchange
-	spawntiles[224] = Chest
-	spawntiles[225] = Potion
-	spawntiles[226] = Boost
-	spawntiles[227] = multipleArrows
-	spawntiles[228] = diamondArrow
-	spawntiles[243] = Key
-	spawntiles[229] = magicShield
-	spawntiles[176] = potionShop
-	spawntiles[177] = maShop
-	
-	-- NPCs
-	-- Scavenger
-	spawntiles[208] = NPC("Scavenger",208,{
-		{"Hello handsome travele-...",
-		"PRINCESS!!!! What are you doing here?",
-		"Hum... hmm...",
-		"so...",
-		"you mean the knights who have been\nordered to rescue you so far won't arrive\nand you've decided to leave this dungeon\non your own?",
-		"Hahahahahahahaha!",
-		"this is a beautiful story",
-		"Since you're here, I must warn you, there\nare monsters in front of this hallway,\njust be very careful with them."}
-	},"npc")
-	
-	spawntiles[210] = NPC("Boko The Seller",210,{
-		{"Oh! Hello! Apparently it was a great idea\nto come to this dungeon to continue the\nfamily business!",
-		"By the way my name is Boko, I'm the 6th\nsalesman of my family's generation.",
-		"I learned everything I know from my\nfather...",
-		"who learned from my grandfather...",
-		"who learned from my great-grandfather...",
-		"who learned from my\ngreat-great-grandfather...",
-		"who also learned from my\ngreat-great-great-grandfather...",
-		"and finally learned from my\ngreat-great-great-great-grandfather.",
-		"Well... what will you want?",}
-	},"npc")
-	
-	spawntiles[211] = NPC("Efal",211,{
-		{"Hi, my name is Efal",
-		"I love reading books =)",
-		"Let me tell you a story",
-		"once a customer came here and \"buy\"\nsomething without paying, my dad hates\npeople who want their products for free",
-		"So daddy used that sword on the wall and\nattacked the boy, never saw him again",
-		"Never try to do this to him, always come\nback =).",}
-	},"npc")
-	
-	spawntiles[212] = NPC("dummy",208,{{}},"dummy")
-	
-	spawntiles[213] = NPC("Zamon The Dungeon Historian",213,{
-		{"Did you come to my class?",
-		"No? No time? Okay...",
-		"my name is Zamon, I study the\narchitecture, the items and even the\nbeasts of this dungeon!",
-		"If you happen to\nfind one of my bookstores, try to be\ninterested in my research.",}
-	},"npc")
-	
-	-- Boards/notes etc
-	-- Board 1
-	spawntiles[218] = NPC(nil,444,{
-		{"Boko's new store opened today!!!",
-		"come visit us!!",}
-	},"board")
-	
-	spawntiles[216] = NPC(nil,460,{
-		{"Welcome to Evil Dungeon, a dungeon with\nthe worst monsters in THE ENTIRE KINGDOM!\nPlease leave your note at the end of the\ndungeon, the Demon King thanks you."}
-	},"board")
-	
-	spawntiles[217] = NPC(nil,461,{
-		{"A-I-M-E-U-C-U"}
-	},"board")
-
+	spawntiles = {
+		-- Mobs
+		[192] = Goblin,
+		[193] = Bat,
+		[194] = Skeleton,
+		[195] = Cerberus,
+		[209] = Fairy,
+		
+		[160] = Wall(446),
+		[161] = Wall(447),
+		[128] = Wall(128),
+		[244] = Door,
+		[230] = safePoint,
+		[232] = doorRoom("1-a","1-b","Boko's Store"), -- old door and next door
+		[233] = doorRoom("1-b","1-a","Dungeon"),
+		[234] = doorRoom("2-a","2-b","Zamon's Classroom"),
+		[235] = doorRoom("2-b","2-a","Dungeon"),
+		[248] = doorRoom("!-a","!-b"),
+		[249] = doorRoom("!-b","!-a"),
+		
+		-- Items
+		[241] = Coin,
+		[242] = coinExchange,
+		[224] = Chest,
+		[225] = Potion,
+		[226] = Boost,
+		[227] = multipleArrows,
+		[228] = diamondArrow,
+		[243] = Key,
+		[229] = magicShield,
+		[176] = potionShop,
+		[177] = maShop,
+		
+		-- NPCs
+		-- Scavenger
+		[208] = NPC("Scavenger",208,{
+			{"Hello handsome travele-...",
+			"PRINCESS!!!! What are you doing here?",
+			"Hum... hmm...",
+			"so...",
+			"you mean the knights who have been\nordered to rescue you so far won't arrive\nand you've decided to leave this dungeon\non your own?",
+			"Hahahahahahahaha!",
+			"this is a beautiful story",
+			"Since you're here, I must warn you, there\nare monsters in front of this hallway,\njust be very careful with them."}
+		},"npc"),
+		
+		[210] = NPC("Boko The Seller",210,{
+			{"Oh! Hello! Apparently it was a great idea\nto come to this dungeon to continue the\nfamily business!",
+			"By the way my name is Boko, I'm the 6th\nsalesman of my family's generation.",
+			"I learned everything I know from my\nfather...",
+			"who learned from my grandfather...",
+			"who learned from my great-grandfather...",
+			"who learned from my\ngreat-great-grandfather...",
+			"who also learned from my\ngreat-great-great-grandfather...",
+			"and finally learned from my\ngreat-great-great-great-grandfather.",
+			"Well... what will you want?",}
+		},"npc"),
+		
+		[211] = NPC("Efal",211,{
+			{"Hi, my name is Efal",
+			"I love reading books =)",
+			"Let me tell you a story",
+			"once a customer came here and \"buy\"\nsomething without paying, my dad hates\npeople who want their products for free",
+			"So daddy used that sword on the wall and\nattacked the boy, never saw him again",
+			"Never try to do this to him, always come\nback =).",}
+		},"npc"),
+		
+		[212] = NPC("dummy",208,{{}},"dummy"),
+		
+		[213] = NPC("Zamon The Dungeon Historian",213,{
+			{"Did you come to my class?",
+			"No? No time? Okay...",
+			"my name is Zamon, I study the\narchitecture, the items and even the\nbeasts of this dungeon!",
+			"If you happen to\nfind one of my bookstores, try to be\ninterested in my research.",}
+		},"npc"),
+		
+		-- Boards/notes etc
+		-- Board 1
+		[218] = NPC(nil,444,{
+			{"Boko's new store opened today!!!",
+			"come visit us!!",}
+		},"board"),
+		
+		[216] = NPC(nil,460,{
+			{"Welcome to Evil Dungeon, a dungeon with\nthe worst monsters in THE ENTIRE KINGDOM!\nPlease leave your note at the end of the\ndungeon, the Demon King thanks you."}
+		},"board"),
+		
+		[217] = NPC(nil,461,{
+			{"A-I-M-E-U-C-U"}
+		},"board"),
+	}
 	for x = 0,240 do
 		for y = 0,136 do
 			local spawn = spawntiles[mget(x,y)]
@@ -1339,6 +1348,7 @@ function buttonUpdate()
 		
 	for i,s in ipairs(butn)do
 		if s.id == menu_state then
+			printb(s.desc,90,78,2,false,1,false,1)
 			local w = print(s.str,0,-6,12)
 			if btnp(4) then
 				s:on()
@@ -1346,7 +1356,7 @@ function buttonUpdate()
 				printb("<",w+4,8*i+70,3)
 		end
 		local w = print(s.str,0,-6,12)
-		printb(s.str,0,8*i+70,3,false,1,false,1)
+		printb(s.str,1,8*i+70,3,false,1,false,1)
 	end
 end
 
@@ -1408,8 +1418,9 @@ function showTextScreenUpdate()
 	else
 		textScreenY = textScreenY - 2
 	end
+	local w = printc(textScreen,0,-6,2,false,1,false,cb)
 	local tx,cb = 120,0
-	if mget(tx//8,textScreenY//8) == 0 then
+	if colT(tx,textScreenY,w,5,0) then
 		cb = 1
 	else
 		cb = 0
@@ -1417,14 +1428,34 @@ function showTextScreenUpdate()
 	printc(textScreen,tx,textScreenY,2,false,1,false,cb)
 end
 
+function lockRoom(l,u,r,d)
+	for i=l,r do
+		for j=u,d do
+			if mget(i,j) == 18 then
+				mset(i,j,17)
+			end
+		end
+	end
+end
+
+function unlockRoom(l,u,r,d)
+	for i=l,r do
+		for j=u,d do
+			if mget(i,j) == 17 then
+				mset(i,j,18)
+			end
+		end
+	end
+end
+
 function menuUpdate()
 	if time()>3000 then
 		cls(0)
 		
 		Music(0,true)
-		printc("Who will",120+(math.cos(t/6)*2)*2,28,2,false,2)
+		printc("Who will",120+(math.cos(t/6)*2)*2,28,2,false,2,false,1)
 		printc("save",120+(math.sin(t/6)*2)*2,38,1,false,2)
-		printc("the princess?",120+(math.cos(t/6)*2)*2,48,3,false,2)
+		printc("the princess?",120+(math.cos(t/6)*2)*2,48,3,false,2,false,2)
 		
 		buttonUpdate()
 		
@@ -1498,13 +1529,22 @@ function gameUpdate()
 		bulletUpdate()
 		updateParts()
 	end
-	
+	if textOn then
+		for c=1,3 do
+			pal(c,c-1)
+		end
+	end
 	cls()
 	map(mx//8,my//8,31,18,-(mx%8),-(my%8),0)
 	
 	table.sort(mobs,layer)
 	
 	for _,m in ipairs(mobs)do
+		if textOn then
+			for c=1,3 do
+				pal(c,c-1)
+			end
+		end
 		m:draw()
 	end
 	drawParts()
@@ -1543,12 +1583,48 @@ function Debug()
 	end
 end
 
+function Credits()
+	for c=1,3 do
+		pal(c,c-1)
+	end
+	cls()
+	map(mx//8,my//8,31,18,-(mx%8),-(my%8))
+	mx,my = math.cos(t/180)*(240/2)+((240*4)-116),math.sin(t/180)*(136/2)+((136*4)-80)
+	for _,m in ipairs(mobs)do
+		for c=1,3 do
+			pal(c,c-1)
+		end
+		if m.name ~= "princess" and m.name ~= "fairy" then
+			m:update()
+			m:draw()
+		end 
+	end
+	
+	local credit = {
+		"-- Creator - Game - twitter --",
+		"",
+		"petet - Balmung",
+		"Trelemar - Amrogue/Bare Bones - @trelemar",
+		"Borb - EMUUROM/Moving in with friends - @borbware",
+		"Wolfy CyberWare - - @WCyberware",
+		"MFauzan - Antvania/Steel War/The Greedy Hero - @MFauzan80",
+		"Dan - Desarmonia (it's not an TIC game) - @ikigaidan_",
+		"",
+		"Nesbox - TIC-80 =)",
+	}
+	for i=1,#credit do
+		printc(credit[i],120,8*i,3,false,1,true,1)
+	end
+	Debug()
+end
+
 function init()
 	STATE_MENU = 0
 	STATE_GAME = 1
 	STATE_LOADING = 2
 	STATE_OPTION = 3
 	STATE_GAMEOVER = 4
+	STATE_CREDITS = 5
 	startMusic = false
 	saved = false
 	loadingTimer = math.random(100,500)
@@ -1587,6 +1663,7 @@ function init()
 		{
 			id = 1,
 			str = "Start Game",
+			desc = "Start your story!",
 			on = function(s)
 				trace("============ GAME ============",4)
 				_GAME.state = STATE_LOADING
@@ -1596,6 +1673,7 @@ function init()
 		{
 			id = 2,
 			str = "Options",
+			desc = "",
 			on = function(s)
 				trace("============ OPTIONS ============",4)
 				_GAME.state = STATE_OPTION
@@ -1604,7 +1682,17 @@ function init()
 		},
 		{
 			id = 3,
+			str = "Credits",
+			desc = "Thanks and tributes to\nprogrammers, without them\nand their respective games\nI would never have learned\ncertain mechanics that are\nbeing used in this game.",
+			on = function(s)
+				trace("============ CREDITS ============",4)
+				_GAME.state = STATE_CREDITS
+			end,
+		},
+		{
+			id = 4,
 			str = "Exit",
+			desc = "",
 			on = function(s)
 				trace("============ EXIT ============",4)
 				exit()
@@ -1628,6 +1716,8 @@ function TIC()
 		Debug()
 	elseif _GAME.state == STATE_OPTION then
 		optionUpdate()
+	elseif _GAME.state == STATE_CREDITS then
+		Credits()
 	end
 	t=t+1
 end
