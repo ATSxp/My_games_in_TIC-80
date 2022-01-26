@@ -312,6 +312,8 @@ function Mob(x,y)
 	s.hp = 1
 	s.sp = s.sp
 	s.spawntile = s.spawntile or 16
+	s.spawnx = x // 8
+	s.spawny = y // 8
 	s.anims = {}
 	s.die = false
 	s.collide = false
@@ -405,6 +407,10 @@ function Mob(x,y)
 			s.hitpause = 40
 			s.atk = true
 		end
+	end
+	
+	function s.despawn(s)
+		mset(s.spawnx,s.spawny,spawntile)
 	end
 	
 	local rnd = math.random(32,128)
@@ -573,7 +579,7 @@ function Skeleton(x,y)
 	s.hp = 20
 	s.speed = 0.3
 	s.range = 20
-	s.dmg = 4
+	s.dmg = 3
 	s.minDelayAtk = 0
 	s.maxDelayAtk = 190
 	s.supUpdate = s.update
@@ -640,6 +646,8 @@ function Player(x,y)
 	s.dmg = 1 + s.dmgExtra
 	s.speed = 0.9
 	s.supMove = s.move
+	s.sx = s.x
+	s.sy = s.y
 	
 	function s.move(s,dx,dy)
 		s:supMove(dx,dy)		
@@ -683,6 +691,7 @@ function Player(x,y)
 	
 	function s.update(s)
 		if s.hp <= 0 then s.sp = s.anims.die end
+		
 		if s.die then return end
 		s.vx = 0
 		s.vy = 0
@@ -1249,7 +1258,6 @@ function Wall(sp)
 	return func
 end
 
---local spawntiles = {}
 function spawnMobs()
 	spawntiles = {
 		-- Mobs
@@ -1347,6 +1355,8 @@ function spawnMobs()
 			local spawn = spawntiles[mget(x,y)]
 			if spawn ~= nil then
 				local mob = spawn(x*8,y*8)
+				mob.spawnx = x
+				mob.spawny = y
 				table.insert(mobs,mob)
 				mset(x,y,mob.spawntile)
 			end
@@ -1393,7 +1403,6 @@ function Hud()
 		x = x + 9
 		if x > 8 * 7 then x = 0;y = y + 8 end
 	end
-	pal()
 	
 	rect(5+10,136-9,p.exp,8,3)
 	spr(505,5+8,136-9,11,1)
@@ -1420,6 +1429,7 @@ function Hud()
 		spr(243,keyx,136-9,11,1)
 		printb(p.keys,keyx+2,136-15,12,false,1,true,cb)
 	end
+	pal()
 end
 
 function showTextScreen(text)
@@ -1540,17 +1550,20 @@ function gameUpdate()
 	if global_hitpause > 0 then
 		global_hitpause = global_hitpause - 1
 	else
+		--spawnMobs()
 		for _,m in ipairs(mobs)do
 			m:update()
 		end
 		bulletUpdate()
 		updateParts()
 	end
+	
 	if textOn then
 		for c=1,3 do
 			pal(c,c-1)
 		end
 	end
+	
 	cls()
 	map(mx//8,my//8,31,18,-(mx%8),-(my%8),0)
 	
@@ -1570,10 +1583,52 @@ function gameUpdate()
 	updateDialog()
 	drawFade()
 	showTextScreenUpdate()
+	gameOver()
 end
 
 function optionUpdate()
 	cls()
+end
+
+function respawn()
+	p.x,p.y = p.spawnx*8,p.spawny*8
+	p.die = false
+	p.hp = p.maxHp
+	
+	for i=#mobs,1,-1 do
+		local m = mobs[i]
+		if m ~= p then
+			m:despawn()
+			table.remove(mobs,i)
+		end
+	end
+	
+	for _,m in ipairs(mobs)do
+		if m.name ~= "princess" then
+			m.x,m.y = m.spawnx,m.spawny
+		end
+	end
+	
+	spawnMobs()
+end
+
+local gy = -16
+function gameOver()
+	local str,str2 = "You die","Press Z to restart"
+	if p.hp <= 0 then
+		pal()
+		global_hitpause = 1
+		textOn = true
+		gy = gy + (gy<60 and 1 or 0)
+		local w = printb(str,0,-16,3,false,2,false,1)
+		printc(str,120,gy,3,false,2,false,1)
+		printc(gy == 60 and str2 or "",120,80,2)
+		
+		if btnp(4) and gy == 60 then
+			reset()
+			_GAME.state = STATE_GAME
+		end
+	end
 end
 
 function Debug()
@@ -1641,10 +1696,8 @@ function init()
 	STATE_GAME = 1
 	STATE_LOADING = 2
 	STATE_OPTION = 3
-	STATE_GAMEOVER = 4
-	STATE_CREDITS = 5
+	STATE_CREDITS = 4
 	startMusic = false
-	saved = false
 	loadingTimer = math.random(100,500)
 	
 	global_hitpause = 0
@@ -1722,7 +1775,6 @@ function init()
 	mx,my = p.x//240*240,p.y//136*136
 	spawnMobs()
 end
-
 init()
 function TIC()
 	if _GAME.state == STATE_MENU then
