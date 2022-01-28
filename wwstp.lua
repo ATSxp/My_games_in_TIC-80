@@ -267,7 +267,7 @@ end
 -- 3 - rectangle/fill
 -- 4 - circle/line
 -- 5 - circle/line art
-function addParts(tbl)if global_hitpause <= 0 then table.insert(parts,tbl) end end
+function addParts(tbl)if global_hitpause == 0 then table.insert(parts,tbl) end end
 function drawParts()
 	for _,v in ipairs(parts)do
 		if v.mode == 1 then
@@ -1323,18 +1323,18 @@ function bestiaryUpdate()
 	local beast = {
 		{
 			name = "Zamon's Bestiary",
-			desc = "Hello dear reader, I am happy to be\nreading this research of mine that it\ntook me so many years to complete it. In\nthis book I categorized all the\nmonsters seen in this dungeon, I drew\nthem to represent them and all have\ntheir names named by various scholars,\nso If you find any bad names, don't\njudge me. In the lower left corner\nthere will be a table with some\ninformation about the monsters, such as\ntheir durability (HP), their level of\ndanger and their strength (ATK).",
+			desc = "\t\tHello dear reader, I am happy to be\nreading this research of mine that it\ntook me so many years to complete it.\t\tIn\nthis book I categorized all the\nmonsters seen in this dungeon, I drew\nthem to represent them and all have\ntheir names named by various scholars,\nso If you find any bad names, don't\njudge me.\t\tIn the lower left corner\nthere will be a table with some\ninformation about the monsters, such as\ntheir durability (HP), their level of\ndanger and their strength (ATK).",
 			info = {},
 		},
 		{
 			name = "",
-			desc = "\tFinally, I want to thank an unnamed\nadventurer who wanted to help me for\ncompleting this book, unfortunately he\nfell into a hole in a dungeon and I never\nsaw him again... he had a certain addiction\nto collecting things.",
+			desc = "\t\tFinally, I want to thank an unnamed\nadventurer who wanted to help me for\ncompleting this book, unfortunately he\nfell into a hole in a dungeon and I never\nsaw him again... he had a certain addiction\nto collecting things.",
 			info = {},
 		},
 		{
 			name = "Bat",
 			sp = {320,321,322,323,324},
-			desc = "A rather annoying and annoying being, he\nuses his echolocation to fly around the\ndungeon. They are fast, but also quite\nweak, most of them walk in packs, making\nit easier to attack the chosen target.",
+			desc = "\t\tA rather annoying and annoying being,\nhe uses his echolocation to fly around\nthe dungeon.\t\tThey are fast, but also\nquite weak, most of them walk in packs,\nmaking it easier to attack the chosen\ntarget.",
 			info = {
 				"Level: low",
 				"Hp: 1/2",
@@ -1371,6 +1371,7 @@ function bestiaryUpdate()
 			printc(v.name,120,15,3,false,1,false,1)
 			printb(v.desc,70,30,3,false,1,true,1)
 			rectb(67,27,146,95,3)
+			printb(_.."/"..#beast,12,12,3,false,1,true)
 		end
 	end
 	
