@@ -15,6 +15,45 @@ _GAME.state =	0
 
 local exp = math.random(1,10)
 
+keyb,but = false,true
+buts = {
+	{id = "up",key = 23,bid = 0},
+	{id = "down",key = 19,bid = 1},
+	{id = "left",key = 1,bid = 2},
+	{id = "right",key = 4,bid = 3},
+	{id = "a",key = nil,bid = 4},
+	{id = "b",key = nil,bid = 5},
+	{id = "x",key = nil,bid = 6},
+	{id = "y",key = nil,bid = 7},
+}
+
+function butn(id)
+	if but then
+		for _,v in ipairs(buts)do
+			v.fn = function(num)return btn(num)end
+			if id == v.id then if v.fn(v.bid)then return true end end
+		end
+	elseif keyb then
+		for _,v in ipairs(buts)do
+			v.fn = function(num)return key(num)end
+			if id == v.id then if v.fn(v.key)then return true end end
+		end
+	end
+end
+
+function butnp(id)
+	if but then
+		for _,v in ipairs(buts)do
+			v.fn = function(num,hold,period)local hold,period = hold or -1,period or -1 return btnp(num,hold,period)end
+			if id == v.id then if v.fn(v.bid)then return true end end end
+	elseif keyb then
+		for _,v in ipairs(buts)do
+			v.fn = function(num,hold,period)local hold,period = hold or -1,period or -1 return keyp(num,hold,period)end
+			if id == v.id then if v.fn(v.key)then return true end end
+		end
+	end
+end
+
 function set(tbl)
 	local s = {}
 	for i,l in ipairs(tbl)do s[l] = true end
@@ -155,7 +194,7 @@ function updateDialog()
 		local str = dialog[dialog_pos]
 		local len = string.len(str)
 		
-		if btnp(4) and text_pos >= 2 then
+		if butnp("a") and text_pos >= 2 then
 			if text_pos < len then
 				text_pos = len
 			else
@@ -208,8 +247,7 @@ function drawFade()
 		f.x2 = f.x2 - f.z
 		
 		
-		if f.z < 0 and f.x + 128 < 0 then table.remove(rec,i)music()
-		elseif f.z > 0 and f.x + 128 > 120 then table.remove(rec,i)music()
+		if f.z < 0 and f.x + 128 < 0 then table.remove(rec,i)
 		else global_hitpause = 1 end
 		
 		rect(f.x,0,120,136,0)
@@ -229,7 +267,7 @@ end
 -- 3 - rectangle/fill
 -- 4 - circle/line
 -- 5 - circle/line art
-function addParts(tbl)table.insert(parts,tbl)end
+function addParts(tbl)if global_hitpause <= 0 then table.insert(parts,tbl) end end
 function drawParts()
 	for _,v in ipairs(parts)do
 		if v.mode == 1 then
@@ -630,7 +668,7 @@ function Player(x,y)
 	s.type = "hero"
 	s.name = "princess"
 	s.money = 0
-	s.maxHp = 1
+	s.maxHp = 5
 	s.hp = s.maxHp
 	s.exp = 0
 	s.keys = 0
@@ -662,7 +700,7 @@ function Player(x,y)
 	
 	function s.anim(s)
 		if s.vx ~= 0 or s.vy ~= 0 then s.sp = s.anims.walk  
-		elseif btn(6) then s.sp = s.anims.atk 
+		elseif butn("x") then s.sp = s.anims.atk 
 		else s.sp = s.anims.idle end
 	end
 	
@@ -707,17 +745,17 @@ function Player(x,y)
 		s.anims.idle = 256
 		s.anims.die = 261
 		
-		if btn(0)then s:move(0,- s.speed) bvx,bvy = 0,- 2 bChange = false end -- up
-		if btn(1)then s:move(0,s.speed) bvx,bvy = 0,2 bChange = false end -- down
-		if btn(2)then s:move(- s.speed,0) bvx,bvy = -2,0 bChange = false end -- left 
-		if btn(3)then s:move(s.speed,0) bvx,bvy = 2,0 bChange = false end -- right
-		if btn(0) and btn(2)then bvx,bvy = - 2,- 2 bChange = true end -- up/left
-		if btn(0) and btn(3)then bvx,bvy = 2,- 2 bChange = true end -- up/right
-		if btn(1) and btn(2)then bvx,bvy = - 2,2 bChange = true end -- down/left
-		if btn(1) and btn(3)then bvx,bvy = 2,2 bChange = true end -- down/right
-		if btnp(4)then Interact(s) end -- interacts with NPCs
-		if btnp(5)then s:onPotion()end -- Use Potion
-		if btn(6) and bullet_timer < 0 then  -- shoot
+		if butn("up")then s:move(0,- s.speed) bvx,bvy = 0,- 2 bChange = false end -- up
+		if butn("down")then s:move(0,s.speed) bvx,bvy = 0,2 bChange = false end -- down
+		if butn("left")then s:move(- s.speed,0) bvx,bvy = -2,0 bChange = false end -- left 
+		if butn("right")then s:move(s.speed,0) bvx,bvy = 2,0 bChange = false end -- right
+		if butn("up") and butn("left")then bvx,bvy = - 2,- 2 bChange = true end -- up/left
+		if butn("up") and butn("right")then bvx,bvy = 2,- 2 bChange = true end -- up/right
+		if butn("down") and butn("left")then bvx,bvy = - 2,2 bChange = true end -- down/left
+		if butn("dowm") and butn("right")then bvx,bvy = 2,2 bChange = true end -- down/right
+		if butnp("a")then Interact(s) end -- interacts with NPCs
+		if butnp("b")then s:onPotion()end -- Use Potion
+		if butn("x") and bullet_timer < 0 then  -- shoot
 			bullet_timer = bmax_timer
 			table.insert(bullet,{sp = 272,x = s.x,y = s.y,vx = bvx*2,vy = bvy*2,f = bf,r = br,w = 8,h = 8})
 		end
@@ -797,7 +835,7 @@ function safePoint(x,y)
 	s.spawntile = 50
 	
 	function s.update(s)
-		if col2(s,p)and btnp(4)then
+		if col2(s,p)and butnp("a")then
 			if p.hp < p.maxHp then
 				p.hp = p.maxHp
 				addDialog({"You have been restored"})
@@ -903,9 +941,7 @@ function Item(x,y)
 			if s.timer > 40 then
 				s.t = s.t + 1
 			end
-		end
-		
-		
+		end	
 	end
 
 	function s.draw(s)
@@ -1103,7 +1139,7 @@ function Door(x,y)
 	s.spawntile = 16
 	
 	function s.onInteract(s)
-		if btnp(4)and p.keys > 0 and s.open == false then
+		if butnp("a")and p.keys > 0 and s.open == false then
 			addDialog({"Unlocked"})
 			s.open = true
 			p.keys = p.keys - 1
@@ -1140,7 +1176,7 @@ function doorRoom(oldId,nextId,textScreen)
 		s.enter = false
 		
 		function s.update(s)
-			if btnp(4)and col2(p,s) then
+			if butnp("a")and col2(p,s) then
 				for _,m in ipairs(mobs)do
 					if m.name == "doorRoom"then
 						if m.id == nextId then
@@ -1184,7 +1220,7 @@ function Shop(x,y)
 	s.dy = 0
 	
 	function s.update(s)
-		if btnp(4)and col2(s,p) then
+		if butnp("a")and col2(s,p) then
 			if type(s.price) == "number" then
 				if p.money >= s.price then
 					p.money = p.money - s.price
@@ -1363,18 +1399,58 @@ function spawnMobs()
 	end
 end
 
+button = {}
+
 function buttonUpdate()
-	if btnp(0) and menu_state > 1 then
-			menu_state = menu_state - 1
-		elseif btnp(1) and menu_state < #butn then
-			menu_state = menu_state + 1
-		end
+	button[1] = {
+		{
+			str = "Start Game",
+			desc = "Start your story!",
+			on = function(s)
+				trace("============ GAME ============",4)
+				_GAME.state = STATE_LOADING
+			end
+		},
+		{
+			str = "Options",
+			desc = "",
+			on = function(s)
+				trace("============ OPTIONS ============",4)
+				fade(-3)
+				_GAME.state = STATE_OPTION
+			end,
+		},
+		{
+			str = "Credits",
+			desc = "Thanks and tributes to\nprogrammers, without them\nand their respective games\nI would never have learned\ncertain mechanics that are\nbeing used in this game.",
+			on = function(s)
+				trace("============ CREDITS ============",4)
+				fade(-3)
+				_GAME.state = STATE_CREDITS
+			end,
+		},
+		{
+			str = "Exit",
+			desc = "",
+			on = function(s)
+				trace("============ EXIT ============",4)
+				exit()
+				trace("Thankyou for playing =)",5)
+			end
+		},
+	}
+
+	if butnp("up") and menu_state > 1 then
+		menu_state = menu_state - 1
+	elseif butnp("down") and menu_state < #button[1] then
+		menu_state = menu_state + 1
+	end
 		
-	for i,s in ipairs(butn)do
-		if s.id == menu_state then
+	for i,s in ipairs(button[1])do
+		if i == menu_state then
 			printb(s.desc,90,78,2,false,1,false,1)
 			local w = print(s.str,0,-6,12)
-			if btnp(4) then
+			if butnp("a")then
 				s:on()
 			end
 				printb("<",w+4,8*i+70,3)
@@ -1476,7 +1552,6 @@ function menuUpdate()
 	if time()>3000 then
 		cls(0)
 		
-		Music(0,true)
 		printc("Who will",120+(math.cos(t/6)*2)*2,28,2,false,2,false,1)
 		printc("save",120+(math.sin(t/6)*2)*2,38,1,false,2)
 		printc("the princess?",120+(math.cos(t/6)*2)*2,48,3,false,2,false,2)
@@ -1527,10 +1602,9 @@ function Loading()
 	
 	for i=0,3 do
 		pal(i,3)
-		spr(anim(loadAnim[indexLoadAnim],16),240-17-1,136-y+dy,11,2,1)
-		spr(anim(loadAnim[indexLoadAnim],16),240-17+1,136-y+dy,11,2,1)
-		spr(anim(loadAnim[indexLoadAnim],16),240-17,136-y-1+dy,11,2,1)
-		spr(anim(loadAnim[indexLoadAnim],16),240-17,136-y+1+dy,11,2,1)
+		for d=1,#dirs do
+			spr(anim(loadAnim[indexLoadAnim],16),240-17+dirs[d][1],136-y+dy+dirs[d][2],11,2,1)
+		end
 	end
 	pal()
 	spr(anim(loadAnim[indexLoadAnim],16),240-17,136-y+dy,11,2,1)
@@ -1588,6 +1662,39 @@ end
 
 function optionUpdate()
 	cls()
+	button[2] = {
+		{
+			str = "Control Type: ",
+			desc = but == false and "keyboard" or "gamepad",
+			on = function(s)
+				keyb = not keyb
+				but = not but
+			end,
+		},
+	}
+	
+	if butnp("up") and option_state > 1 then
+		option_state = option_state - 1
+	elseif butnp("down") and option_state < #button[2] then
+		option_state = option_state + 1
+	end
+		
+	for i,s in ipairs(button[2])do
+		if i == option_state then
+			local w = print(s.str..s.desc,0,-6,12)
+			--printb(s.desc,11,8*i+10,2,false,1,false,1)
+			if butnp("a")then
+				s:on()
+			end
+				printb("<",w+4,8*i+10,3)
+		end
+		local w = print(s.str,0,-6,12)
+		printb(s.str..s.desc,1,8*i+10,3,false,1,false,1)
+		printb(but and "B to Back" or "cu",1,136-8,3,false,1,false,1)
+	end
+	
+	if butnp("b") then _GAME.state = STATE_MENU fade(-3)end
+	drawFade()
 end
 
 local gy,by,b = -16,-136-8,0
@@ -1609,12 +1716,12 @@ function gameOver()
 		end
 		by = by + b
 		
-		if btnp(4) and gy == 60 then
+		if butnp("a") and gy == 60 then
 			b = 2
 		end
 		
 		if by > - 1 then
-			reset()
+			-- I need to work more on the load save system
 			by = -136
 		end
 	end
@@ -1645,7 +1752,6 @@ function Debug()
 end
 
 function Credits()
-	music()
 	for c=1,3 do
 		pal(c,c-1)
 	end
@@ -1678,9 +1784,11 @@ function Credits()
 	for i=1,#credit do
 		printc(credit[i],120,8*i,3,false,1,true,1)
 	end
+	printb(but and "B to Back" or "cu",1,136-8,3,false,1,false,1)
 	
-	if btnp(5)then _GAME.state = STATE_MENU end
+	if butnp("b")then _GAME.state = STATE_MENU fade(-3)end
 	Debug()
+	drawFade()
 end
 
 function init()
@@ -1720,49 +1828,8 @@ function init()
 	dix,diy = 0,60
 	
 	menu_state = 1
+	option_state = 1
 	timerText = 0
-	
-	butn = {
-		{
-			id = 1,
-			str = "Start Game",
-			desc = "Start your story!",
-			on = function(s)
-				trace("============ GAME ============",4)
-				_GAME.state = STATE_LOADING
-				--fade(-1)
-			end
-		},
-		{
-			id = 2,
-			str = "Options",
-			desc = "",
-			on = function(s)
-				trace("============ OPTIONS ============",4)
-				_GAME.state = STATE_OPTION
-				fade(-1)
-			end,
-		},
-		{
-			id = 3,
-			str = "Credits",
-			desc = "Thanks and tributes to\nprogrammers, without them\nand their respective games\nI would never have learned\ncertain mechanics that are\nbeing used in this game.",
-			on = function(s)
-				trace("============ CREDITS ============",4)
-				_GAME.state = STATE_CREDITS
-			end,
-		},
-		{
-			id = 4,
-			str = "Exit",
-			desc = "",
-			on = function(s)
-				trace("============ EXIT ============",4)
-				exit()
-				trace("Thankyou for playing =)",5)
-			end
-		},
-	}
 	
 	mx,my = p.x//240*240,p.y//136*136
 	spawnMobs()
