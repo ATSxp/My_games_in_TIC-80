@@ -11,11 +11,11 @@ t = 0
 
 _GAME = {}
 _GAME.on = false
-_GAME.state =	-1
+_GAME.state = 1
 
 local exp = math.random(1,10)
 
-keyb,but = false,false
+keyb,but = false,true
 buts = {
 	{id = "up",key = 23,bid = 0},
 	{id = "down",key = 19,bid = 1},
@@ -1293,6 +1293,93 @@ function Wall(sp)
 	return func
 end
 
+function Bestiary(x,y)
+	local s = Mob(x,y)
+	s.type = "book"
+	s.name = "bestiary"
+	s.c = 11
+	s.collide = true
+	s.sp = 156
+	
+	function s.update(s)
+		if butnp("a")and col2(s,p)then
+			trace("\n============ \nBESTIARY ON\n============",4)
+			bestiaryOn = true
+		end
+		
+		s.dy = math.sin((t/16))*2
+	end
+	
+	function s.draw(s)
+		if col2(s,p)then
+			sprc(509,s.x,(s.y-10)+s.dy,11,1)
+		end
+		sprc(s.sp,s.x,s.y,s.c,1)
+	end
+	return s
+end
+
+function bestiaryUpdate()
+	local beast = {
+		{
+			name = "Zamon's Bestiary",
+			desc = "Hello dear reader, I am happy to be\nreading this research of mine that it\ntook me so many years to complete it. In\nthis book I categorized all the\nmonsters seen in this dungeon, I drew\nthem to represent them and all have\ntheir names named by various scholars,\nso If you find any bad names, don't\njudge me. In the lower left corner\nthere will be a table with some\ninformation about the monsters, such as\ntheir durability (HP), their level of\ndanger and their strength (ATK).",
+			info = {},
+		},
+		{
+			name = "",
+			desc = "\tFinally, I want to thank an unnamed\nadventurer who wanted to help me for\ncompleting this book, unfortunately he\nfell into a hole in a dungeon and I never\nsaw him again... he had a certain addiction\nto collecting things.",
+			info = {},
+		},
+		{
+			name = "Bat",
+			sp = {320,321,322,323,324},
+			desc = "A rather annoying and annoying being, he\nuses his echolocation to fly around the\ndungeon. They are fast, but also quite\nweak, most of them walk in packs, making\nit easier to attack the chosen target.",
+			info = {
+				"Level: low",
+				"Hp: 1/2",
+				"Atk: 1",
+			},
+		},
+	}
+
+	global_hitpause = 1
+	clip(10,10,240-20,136-20)
+	cls()
+	
+	if butnp("left") and beast_state > 1 then
+		beast_state = beast_state - 1
+	elseif butnp("right") and beast_state < #beast then
+		beast_state = beast_state + 1
+	end
+	
+	for _,v in ipairs(beast)do
+		if _ == beast_state then		
+			local x,y,s = 20,20,4
+			for d=1,#dirs do
+				for i=0,15 do
+					pal(i,3)
+					spr((v.sp~=nil and anim(v.sp)or 20),dirs[d][1]+x,dirs[d][2]+y,11,s)
+				end
+			end
+			pal()
+			spr((v.sp~=nil and anim(v.sp)or 20),x,y,11,s)
+			for i=1,#v.info do
+				printb(v.info[i],x-3,8*i+y+28,3,false,1,true,1)
+			end
+			if #v.info > 0 then  rectb(x-6,y+34,47,68,3)end
+			printc(v.name,120,15,3,false,1,false,1)
+			printb(v.desc,70,30,3,false,1,true,1)
+			rectb(67,27,146,95,3)
+		end
+	end
+	
+	rectb(10,10,240-20,136-20,3)
+	clip()
+	printc((but and "B" or "L").." to back",120,136-8,3,false,1,false,1)
+	if butnp("b")then bestiaryOn = false end
+end
+
 function spawnMobs()
 	spawntiles = {
 		-- Mobs
@@ -1308,6 +1395,7 @@ function spawnMobs()
 		[162] = Wall(415),
 		[244] = Door,
 		[230] = safePoint,
+		[156] = Bestiary,
 		[232] = doorRoom("1-a","1-b","Boko's Store"), -- old door and next door
 		[233] = doorRoom("1-b","1-a","Dungeon"),
 		[234] = doorRoom("2-a","2-b","Zamon's Classroom"),
@@ -1381,9 +1469,6 @@ function spawnMobs()
 		[217] = NPC(nil,461,{
 			{"A-I-M-E-U-C-U"}
 		},"board"),
-		[156] = NPC(nil,156,{
-			{"bucetinha"}
-		},"board")
 	}
 	for x = 0,240 do
 		for y = 0,136 do
@@ -1407,7 +1492,7 @@ function buttonUpdate()
 			str = "Start Game",
 			desc = "Start your story!",
 			on = function(s)
-				trace("============ GAME ============",4)
+				trace("\n============ \nGAME\n============",4)
 				_GAME.state = STATE_LOADING
 			end
 		},
@@ -1415,7 +1500,7 @@ function buttonUpdate()
 			str = "Options",
 			desc = "",
 			on = function(s)
-				trace("============ OPTIONS ============",4)
+				trace("\n============ \nOPTIONS\n============",4)
 				fade(-3)
 				_GAME.state = STATE_OPTION
 			end,
@@ -1424,7 +1509,7 @@ function buttonUpdate()
 			str = "Credits",
 			desc = "Thanks and tributes to\nprogrammers, without them\nand their respective games\nI would never have learned\ncertain mechanics that are\nbeing used in this game.",
 			on = function(s)
-				trace("============ CREDITS ============",4)
+				trace("\n============ \nCREDITS\n============",4)
 				fade(-3)
 				_GAME.state = STATE_CREDITS
 			end,
@@ -1433,7 +1518,7 @@ function buttonUpdate()
 			str = "Exit",
 			desc = "Are you already going? :(",
 			on = function(s)
-				trace("============ EXIT ============",4)
+				trace("\n============ \nEXIT\n============",4)
 				exit()
 				trace("Thankyou for playing =)",5)
 			end
@@ -1568,6 +1653,7 @@ function chooseInput()
 end
 
 function menuUpdate()
+	mx,my = p.x//240*240,p.y//136*136
 	openingTimer = openingTimer - 1
 	if openingTimer <= 0 then
 		cls(0)
@@ -1675,6 +1761,9 @@ function gameUpdate()
 	drawFade()
 	showTextScreenUpdate()
 	gameOver()
+	if bestiaryOn then
+		bestiaryUpdate()
+	end
 end
 
 function optionUpdate()
@@ -1817,6 +1906,7 @@ function init()
 	STATE_OPTION = 3
 	STATE_CREDITS = 4
 	startMusic = false
+	bestiaryOn = false
 	openingTimer = 100
 	loadingTimer = math.random(100,500)
 	
@@ -1849,6 +1939,7 @@ function init()
 	
 	menu_state = 1
 	option_state = 1
+	beast_state = 1
 	timerText = 0
 	
 	mx,my = p.x//240*240,p.y//136*136
