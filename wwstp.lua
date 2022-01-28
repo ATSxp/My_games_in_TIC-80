@@ -11,20 +11,20 @@ t = 0
 
 _GAME = {}
 _GAME.on = false
-_GAME.state =	0
+_GAME.state =	-1
 
 local exp = math.random(1,10)
 
-keyb,but = false,true
+keyb,but = false,false
 buts = {
 	{id = "up",key = 23,bid = 0},
 	{id = "down",key = 19,bid = 1},
 	{id = "left",key = 1,bid = 2},
 	{id = "right",key = 4,bid = 3},
-	{id = "a",key = nil,bid = 4},
-	{id = "b",key = nil,bid = 5},
-	{id = "x",key = nil,bid = 6},
-	{id = "y",key = nil,bid = 7},
+	{id = "a",key = 11,bid = 4},
+	{id = "b",key = 12,bid = 5},
+	{id = "x",key = 10,bid = 6},
+	{id = "y",key = 9,bid = 7},
 }
 
 function butn(id)
@@ -1431,7 +1431,7 @@ function buttonUpdate()
 		},
 		{
 			str = "Exit",
-			desc = "",
+			desc = "Are you already going? :(",
 			on = function(s)
 				trace("============ EXIT ============",4)
 				exit()
@@ -1548,22 +1548,39 @@ function unlockRoom(l,u,r,d)
 	end
 end
 
+function chooseInput()
+	cls()
+	printc("Choose your Input",120,10,2,false,1,false,1)
+	local bx,kx = (240-48*2)//2,(240+48/2)//2
+	spr(anim({316,318},16),bx,48,0,2,0,0,2,2)
+	spr(anim({348,350},16),kx,48,0,2,0,0,2,2)
+	printb("Gamepad",(240-48*2.2)//2,88,3,false,1,false,1)
+	printb("Keyboard",(240+48//4)//2,88,3,false,1,false,1)
+	
+	local x,y,press = mouse()
+	if col3(x,y,8,8,bx,48,32,32)then
+		rectb(bx,50,32,32,3)
+		if press then but = true _GAME.state = STATE_MENU end
+	elseif col3(x,y,8,8,kx,48,32,32)then
+		rectb(kx,50,32,32,3)
+		if press then keyb = true _GAME.state = STATE_MENU end
+	end
+end
+
 function menuUpdate()
-	if time()>3000 then
+	openingTimer = openingTimer - 1
+	if openingTimer <= 0 then
 		cls(0)
 		
 		printc("Who will",120+(math.cos(t/6)*2)*2,28,2,false,2,false,1)
 		printc("save",120+(math.sin(t/6)*2)*2,38,1,false,2)
 		printc("the princess?",120+(math.cos(t/6)*2)*2,48,3,false,2,false,2)
-		
 		buttonUpdate()
-		
 		drawFade()
 	else
 		local w = print("-- @ATS_xp --",0,-6,12)
 		clip(0,0,240,136)
 		cls(0)
-		
 		spr(14,(240 - (16 * 4))//2,30,11,4,0,0,2,2)
 		printb("-- @ATS_xp --",(240-w)//2,108,3,false,1,false,1)
 		clip()
@@ -1664,19 +1681,23 @@ function optionUpdate()
 	cls()
 	button[2] = {
 		{
-			str = "Control Type: ",
+			str = "Input: ",
 			desc = but == false and "keyboard" or "gamepad",
 			on = function(s)
+				trace("\n============ \nINPUT EXCHANGEDT\n============",4)
 				keyb = not keyb
 				but = not but
 			end,
 		},
 	}
 	
-	if butnp("up") and option_state > 1 then
-		option_state = option_state - 1
-	elseif butnp("down") and option_state < #button[2] then
-		option_state = option_state + 1
+	if #rec <= 0 then
+		if butnp("up") and option_state > 1 then
+			option_state = option_state - 1
+		elseif butnp("down") and option_state < #button[2] then
+			option_state = option_state + 1
+		end
+		if butnp("b") then _GAME.state = STATE_MENU fade(-3)end
 	end
 		
 	for i,s in ipairs(button[2])do
@@ -1690,10 +1711,8 @@ function optionUpdate()
 		end
 		local w = print(s.str,0,-6,12)
 		printb(s.str..s.desc,1,8*i+10,3,false,1,false,1)
-		printb(but and "B to Back" or "cu",1,136-8,3,false,1,false,1)
+		printb((but and "B" or "L").." to back",1,136-8,3,false,1,false,1)
 	end
-	
-	if butnp("b") then _GAME.state = STATE_MENU fade(-3)end
 	drawFade()
 end
 
@@ -1767,8 +1786,7 @@ function Credits()
 			m:draw()
 		end 
 	end
-	updateParts()
-	drawParts()
+	
 	local credit = {
 		"-- Creator - Game - twitter --",
 		"",
@@ -1784,20 +1802,22 @@ function Credits()
 	for i=1,#credit do
 		printc(credit[i],120,8*i,3,false,1,true,1)
 	end
-	printb(but and "B to Back" or "cu",1,136-8,3,false,1,false,1)
+	printb((but and "B" or "L").." to back",1,136-8,3,false,1,false,1)
 	
-	if butnp("b")then _GAME.state = STATE_MENU fade(-3)end
+	if butnp("b") and #rec <= 0 then _GAME.state = STATE_MENU fade(-3)end
 	Debug()
 	drawFade()
 end
 
 function init()
+	STATE_INPUT = - 1
 	STATE_MENU = 0
 	STATE_GAME = 1
 	STATE_LOADING = 2
 	STATE_OPTION = 3
 	STATE_CREDITS = 4
 	startMusic = false
+	openingTimer = 100
 	loadingTimer = math.random(100,500)
 	
 	global_hitpause = 0
@@ -1836,15 +1856,17 @@ function init()
 end
 init()
 function TIC()
-	if _GAME.state == STATE_MENU then
+	if _GAME.state == STATE_INPUT then
+		chooseInput()
+	elseif _GAME.state == STATE_MENU then
 		menuUpdate()
+	elseif _GAME.state == STATE_OPTION then
+		optionUpdate()
 	elseif _GAME.state == STATE_LOADING then
 		Loading()
 	elseif _GAME.state == STATE_GAME then
 		gameUpdate()
 		Debug()
-	elseif _GAME.state == STATE_OPTION then
-		optionUpdate()
 	elseif _GAME.state == STATE_CREDITS then
 		Credits()
 	end
