@@ -1389,6 +1389,83 @@ function bestiaryUpdate()
 	if butnp("b")then bestiaryOn = false end
 end
 
+function Bullet(x,y,vx,vy)
+	local s = {}
+	s.name = "bullet"
+	s.sp = nil
+	s.f = 0
+	s.x = x or 0
+	s.y = y or 0
+	s.vx = vx or 0
+	s.vy = vy or 0
+	s.w = 8
+	s.h = 8
+	s.size = 8
+	s.startx = x or 0
+	s.starty = y or 0
+	s.range = 40
+	s.dmg = 1
+	s.collided = false
+	s.animSpeed = 8
+	
+		function s.move(s)
+		s.vx = vx
+		s.vy = vy
+		
+		local x = s.x + s.vx
+		local y = s.y + s.vy
+		local w = s.w
+		local h = s.h
+		if 
+			sol(x+1,y+((h/2)+1))or 
+			sol(x+(w-1),y+((h/2)+1))or 
+			sol(x+1,y+(h-1))or
+			sol(x+(w-1),y+(h-1))then
+			s:collide()
+		end
+		
+		s.x = s.x + s.vx
+		s.y = s.y + s.vy
+	end
+	
+	function s.update(s)
+		if s.collided then return end
+		if s.vx ~= 0 then s.f = s.vx<0 and 0 or 1 end
+		s:move()
+		
+		local dx,dy = p.x - s.x,p.y - s.y
+		local dst = math.sqrt(dx^2+dy^2)
+		if dst <= 8 then
+			s:collide()
+			p:damage(s.dmg)
+		end
+		
+		local dx,dy = s.x - s.startx,s.y - s.starty
+		if math.sqrt(dx^2+dy^2) > s.range then s:collide()end
+	end
+	
+	function s.collide(s)
+		if not s.collided then
+			local oldx,oldy = s.x,s.y
+			addParts({x=oldx,y=oldy,c=math.random(1,2),vy=-2,s=2,mode=4})
+			addParts({x=oldx,y=oldy,c=math.random(1,2),vy=-2,s=2,mode=4})
+			s.collided = true
+		end
+	end
+	
+	function s.draw(s)
+		if not s.collided then
+			if s.sp ~= nil then
+				sprc(anim(s.sp,s.animSpeed),s.x,s.y,11,1,s.f)
+			else
+				circ(s.x-mx,s.y-my,s.size,2)
+				circb(s.x-mx,s.y-my,s.size,1)
+			end
+		end
+	end
+	return s 
+end
+
 function spawnMobs()
 	spawntiles = {
 		-- Mobs
@@ -1740,6 +1817,9 @@ function gameUpdate()
 		for _,m in ipairs(mobs)do
 			m:update()
 		end
+		for _,b in ipairs(enemyBullet)do
+			b:update()
+		end
 		bulletUpdate()
 		updateParts()
 	end
@@ -1763,6 +1843,11 @@ function gameUpdate()
 		end
 		m:draw()
 	end
+	
+	for _,b in ipairs(enemyBullet)do
+		b:draw()
+	end
+	
 	drawParts()
 	bulletDraw()
 	Hud()
@@ -1930,6 +2015,7 @@ function init()
 	bChange = false
 	bvx,bvy = 2,0
 	bf,br = 0,0
+	enemyBullet = {}
 	
 	textScreen = ""
 	textScreenTimer = -80
