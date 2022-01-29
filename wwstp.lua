@@ -307,6 +307,7 @@ function bulletDraw()
 		if not bChange then
 			sprc(272,v.x,v.y,11,1,v.f,v.r)
 		end
+		if _GAME.on then rectb(v.x-mx,v.y-my,v.w,v.h,9)end
 	end	
 end
 
@@ -371,6 +372,7 @@ function Mob(x,y)
 	s.h = 8
 	s.vx = 0
 	s.vy = 0
+	s.dy = 0
 	s.speed = 0.4
 	s.f = 0
 	s.c = - 1
@@ -447,10 +449,6 @@ function Mob(x,y)
 		end
 	end
 	
-	function s.despawn(s)
-		mset(s.spawnx,s.spawny,spawntile)
-	end
-	
 	local rnd = math.random(32,128)
 	function s.update(s)
 		s:updateEnemy()
@@ -465,6 +463,7 @@ function Mob(x,y)
 		if s.timer < 105 and (s.timer//3)%2 == 0 then
 			sprc(271,s.x,s.y+3,0,1)
 			sprc(s.sp,s.x,s.y,s.c,1,s.f)
+			if _GAME.on then rectb(s.x-mx,s.y-my,s.w,s.h,9)end
 		end
 		pal()
 	end
@@ -595,6 +594,7 @@ function Bat(x,y)
 				sprc(271,s.x,s.y+3,0,1)
 			end
 			sprc(s.sp,s.x,s.y-4 + (s.die and 0 or (s.atk and 0 or s.dy)),s.c,1,s.f)
+			if _GAME.on then rectb(s.x-mx,s.y-4+(s.die and 0 or (s.atk and 0 or s.dy))-my,s.w,s.h,9)end
 		end
 		pal()
 	end
@@ -776,6 +776,7 @@ function Player(x,y)
 		sprc(s.sp,s.x,s.y,s.c,1,s.f)
 		pal()
 		if s.shield > 0 then circb(s.x-mx+4,s.y-my+4,5,2)end
+		if _GAME.on then rectb(s.x-mx,s.y-my,s.w,s.h,9)end
 	end
 	return s
 end
@@ -948,6 +949,7 @@ function Item(x,y)
 		if not s.pickUp then
 			sprc(271,s.x,s.y+2,0,1)
 			sprc(s.sp,s.x,s.y+s.dy,s.c,1)
+			if _GAME.on then rectb(s.x-mx,s.y-my,s.w,s.h,9)end
 		end
 	end
 	return s
@@ -1072,22 +1074,28 @@ function Chest(x,y)
 	function s.update(s)
 		if s.open then return end	
 		for _,m in ipairs(mobs)do if m.type == "enemy" and col2(m,s)then s.collide = false else s.collide = true end end	
-		for _,v in ipairs(bullet)do
-			if col(v.x-1,v.y,v.w+2,v.h,s.x-2,s.y,s.w+4,s.h+2)then
-				s.open = true
-				local id = math.random(1,#chest_item[1])
-				table.insert(mobs,chest_item[1][id](s.x,s.y+2))
-				addDialog({chest_item[2][id]})
-			end
+		if col2(p,s)and butnp("a")then
+			s.open = true
+			local id = math.random(1,#chest_item[1])
+			table.insert(mobs,chest_item[1][id](s.x,s.y+2))
+			addDialog({chest_item[2][id]})
 		end
 		
+		s.dy = math.sin((t/8))*2
 	end
 	
+	local flip = math.random(0,1)
 	function s.draw(s)
 		sprc(271,s.x,s.y,0,1)
-		if not s.open then sprc(s.sp,s.x,s.y,s.c,1)
-		else sprc(240,s.x,s.y,s.c,1)end
-		--rectb(s.x-mx-2,s.y-my,s.w+4,s.h+2,12)
+		if not s.open then 
+			sprc(s.sp,s.x,s.y,s.c,1,flip)
+			if col2(p,s)then
+				sprc(509,s.x,s.y-8+s.dy,11,1)
+			end
+		else 
+			sprc(240,s.x,s.y,s.c,1)
+		end
+		if _GAME.on then rectb(s.x-1-mx,s.y+2-my,s.w+2,s.h-1,9)end
 	end
 	return s
 end
@@ -1850,7 +1858,6 @@ function Debug()
 			{str = "Bullets: "..#bullet},
 			{str = "Particles: "..#parts},
 			{str = "Ents: "..#mobs},
-			{str = "Debug Mode: "..tostring(STATE_DEBUG)},
 		},
 	}
 	if _GAME.on then
