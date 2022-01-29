@@ -74,6 +74,7 @@ SOLID = set{1,2,3,4,5,17,19,21,29,34,35,36,37,44,45,46,47,
 110,111,124,125,126,127,140,141,142,143}
 
 function anim(f,s)local f,s = f or {},s or 8;return f[((t//s)%#f)+1] end
+function angle(x1,y1,x2,y2)return math.atan2(y2-y1,x2-x1)end
 
 function sol(x,y)
 	for _,m in ipairs(mobs)do
@@ -660,6 +661,52 @@ function Cerberus(x,y)
 		end
 	end
 	
+	return s
+end
+
+function Hunter(x,y)
+	local s = Mob(x,y)
+	s.type = "enemy"
+	s.name = "adventurer_hunter"
+	s.sp = 368
+	s.c = 11
+	s.dmg = 1
+	s.hp = 5
+	s.range = 130
+	s.fov = 8*12
+	s.supUpdate = s.update
+	s.anims = {
+		idle = {368},
+		walk = {369,370},
+		atk = {371},
+		die = {372},
+	}
+	
+	function s.createBullet(s,x,y,vx,vy)
+		local b = Bullet(x,y,vx,vy)
+		b.sp = {291,292}
+		b.animSpeed = 2
+		b.dmg = s.dmg
+		b.range = 100
+		return b
+	end
+	
+	function s.attack(s)
+		if not s.atk and not s.die then
+			local speed,dir,a = 1.5,(s.x-p.x)>0 and 0 or 2,angle(p.x,p.y,s.x,s.y)
+			local b = s:createBullet(s.x+dir,s.y+4,-speed*math.cos(a),-speed*math.sin(a))
+			table.insert(enemyBullet,b)
+			s.atk = true
+		end
+	end
+	
+	function s.update(s)
+		s:supUpdate()
+		if not s.die then			
+			s:seePlayer(p.x,p.y)
+			s.dmg = math.random(1,3)
+		end
+	end
 	return s
 end
 
@@ -1437,7 +1484,15 @@ function Bullet(x,y,vx,vy)
 		local dst = math.sqrt(dx^2+dy^2)
 		if dst <= 8 then
 			s:collide()
-			p:damage(s.dmg)
+			if p.shield <= 0 then 
+				p:damage(s.dmg)
+				local oldx,oldy = p.x,p.y
+				addParts({x = oldx,y = oldy,mode = 2,text = -s.dmg,vy = -0.5,vx = 0,c = 1,max = 40})
+				addParts({x = p.x,y = p.y,c = 1,vx = math.cos(t),vy = math.sin(t)})
+			else
+				addParts({x = p.x,y = p.y,c = 2,vx = math.cos(t),vy = math.sin(t)})
+			end
+			s.hitpause = 40
 		end
 		
 		local dx,dy = s.x - s.startx,s.y - s.starty
@@ -1473,6 +1528,7 @@ function spawnMobs()
 		[193] = Bat,
 		[194] = Skeleton,
 		[195] = Cerberus,
+		[196] = Hunter,
 		[209] = Fairy,
 		
 		[160] = Wall(446),
@@ -1978,6 +2034,7 @@ function Credits()
 		"Wolfy CyberWare - - @WCyberware",
 		"MFauzan - Antvania/Steel War/The Greedy Hero - @MFauzan80",
 		"Dan - Desarmonia (it's not an TIC game) - @ikigaidan_",
+		"Deck - QUEST FOR GLORY -",
 		"",
 		"Nesbox - TIC-80 =)",
 	}
