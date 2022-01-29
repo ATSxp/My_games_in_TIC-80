@@ -11,7 +11,8 @@ t = 0
 
 _GAME = {}
 _GAME.on = false
-_GAME.state = 1
+_GAME.fps = false
+_GAME.state = 0
 
 local False,True = 0,1
 local exp = math.random(1,50)
@@ -53,6 +54,20 @@ function butnp(id)
 			if id == v.id then if v.fn(v.key)then return true end end
 		end
 	end
+end
+
+FPS={fps=0,frames=0,lastTime=-1000,x=120,y=1,color=9,w=0,h=0,layer=0}
+function FPS:upd() --original by Al Rado https://tic.computer/play?cart=123
+	if (time()-self.lastTime<=1000) then
+		self.frames=self.frames+1
+	else 
+		self.fps=self.frames
+		self.frames=0
+		self.lastTime=time()
+	end
+end
+function FPS:drw()
+	printc("FPS: "..self.fps,self.x,self.y,self.color,false,1,false,8)
 end
 
 function set(tbl)
@@ -441,6 +456,8 @@ function Mob(x,y)
 			if s.hit > 0 then s.hit = s.hit - 1 end
 			if s.hitpause <= 0 then s.atk = false end
 			
+			if s.timer > 105 then for i=#mobs,1,-1 do local m = mobs[i];if m == s then	table.remove(mobs,i)	end	end end
+			
 			if s.die == True then return end
 			
 			local dx = p.x - s.x
@@ -504,7 +521,8 @@ function Mob(x,y)
 				end
 				table.insert(mobs,chest_item[1][math.random(1,2)](s.x,s.y+4))
 				table.insert(mobs,Exp(s.x,s.y))--]]
-			end	
+			end
+			
 		end
 	end
 	return s
@@ -663,7 +681,7 @@ function Hunter(x,y)
 	function s.attack(s)
 		if not s.atk then
 			local speed,dir,a = 1.5,(s.x-p.x)>0 and 0 or 2,angle(p.x,p.y,s.x,s.y)
-			local b = s:createBullet(s.x+dir,s.y+4,-speed*math.cos(a),-speed*math.sin(a))
+			local b = s:createBullet(s.x+dir,s.y+2,-speed*math.cos(a),-speed*math.sin(a))
 			table.insert(enemyBullet,b)
 			s.hitpause = 40
 			s.atk = true
@@ -737,7 +755,7 @@ function Player(x,y)
 	s.f = 1
 	s.dmgExtra = 0
 	s.dmg = 1 + s.dmgExtra
-	s.speed = 0.9
+	s.speed = 1.3
 	s.supMove = s.move
 	
 	function s.move(s,dx,dy)
@@ -897,14 +915,6 @@ function safePoint(x,y)
 			else
 				addDialog({"You don't need to be restored"})
 			end
-			for i=#mobs,1,-1 do
-				local m = mobs[i]
-				if m~=p and m~=s and m.name ~= "fairy" and m.name ~= "door" and m.type ~= "item" then
-					m:despawn()
-					table.remove(mobs,i)
-				end
-			end
-			spawnMobs()
 			Save()
 		end
 		s.dy = math.cos((t/16))*2
@@ -1002,7 +1012,16 @@ function Item(x,y)
 			if s.timer > 40 then
 				s.t = s.t + 1
 			end
-		end	
+		end
+		
+		--[[if s.pickUp == True then
+			for i=#mobs,1,-1 do
+				local m = mobs[i]
+				if m == s then
+					table.remove(mobs,i)
+				end
+			end
+		end--]]
 	end
 
 	function s.draw(s)
@@ -1126,7 +1145,8 @@ function Chest(x,y)
 	function s.update(s)
 		if s.open == True then s.vanish = s.vanish + 1 end
 		if s.vanish > 100 then s.timer = s.timer + 1 end
-		if s.timer > 105 then s.collide = False end
+		if s.timer > 105 then s.collide = False for i=#mobs,1,-1 do local m = mobs[i];if m == s then 	table.remove(mobs,i) end end end
+		
 		if s.open == True then return end	
 		for _,m in ipairs(mobs)do if m.type == "enemy" and col2(m,s)then s.collide = False else s.collide = True end end	
 		if col2(p,s)and butnp("a")then
@@ -1863,6 +1883,14 @@ function Save()
 	pmem(0,save.px)pmem(1,save.py)pmem(2,False)
 	pmem(3,p.maxHp)pmem(4,save.fx)pmem(5,save.fy)
 	pmem(6,p.exp)
+	for i=#mobs,1,-1 do
+		local m = mobs[i]
+		if m~=p and m~=s and m.name ~= "fairy" and m.name ~= "door" and m.type ~= "item" then
+			m:despawn()
+			table.remove(mobs,i)
+		end
+	end
+	spawnMobs()
 end
 
 function Load()
@@ -1990,7 +2018,6 @@ function gameUpdate()
 	if bestiaryOn then
 		bestiaryUpdate()
 	end
-	if butnp("b")then Load()end
 end
 
 function optionUpdate()
@@ -2190,5 +2217,9 @@ function TIC()
 	elseif _GAME.state == STATE_CREDITS then
 		Credits()
 	end
+	if _GAME.fps then
+		FPS:drw()
+	end
+	FPS:upd()
 	t=t+1
 end
