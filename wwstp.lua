@@ -13,7 +13,8 @@ _GAME = {}
 _GAME.on = false
 _GAME.state = 1
 
-local exp = math.random(1,10)
+local False,True = 0,1
+local exp = math.random(1,50)
 
 keyb,but = false,true
 buts = {
@@ -75,15 +76,13 @@ SOLID = set{1,2,3,4,5,17,19,21,29,34,35,36,37,44,45,46,47,
 
 function anim(f,s)local f,s = f or {},s or 8;return f[((t//s)%#f)+1] end
 function angle(x1,y1,x2,y2)return math.atan2(y2-y1,x2-x1)end
-
 function sol(x,y)
 	for _,m in ipairs(mobs)do
 		local hit = col(x,y,0,0,m.x,m.y,m.w,m.h)
-		if m.collide and hit then return true end
+		if m.collide == True and hit then return true end
 	end
 	return SOLID:contains(mget(x//8,y//8))
 end
-
 function sprc(id,x,y,c,s,f,r,w,h)
 	local x,y,c,s,f,r,w,h = x or 0,y or 0,c or -1,s or 1,f or 0,r or 0,w or 1,h or 1
 	spr(id,x-mx,y-my,c,s,f,r,w,h)
@@ -94,22 +93,17 @@ dirs = {
 }
 function printb(text,x,y,c,fix,s,sm,cb)
 	local fix,s,sm,cb = fix or false,s or 1,sm or false,cb or 0
-	--[[print(text,x-1,y,cb,fix,s,sm)
-	print(text,x+1,y,cb,fix,s,sm)
-	print(text,x,y-1,cb,fix,s,sm)--]]
 	for d=1,#dirs do
 		print(text,dirs[d][1]+x,dirs[d][2]+y,cb,fix,s,sm)
 	end
 	print(text,x,y,c,fix,s,sm)
 	return print(text,x,y,c,fix,s,sm,cb)
 end
-
 -- By: Nesbox / mod by me
 function printc(s,x,y,c,f,sc,sm,cb)
     local w=print(s,0,-18,c,f or false,sc or 1,sm or false,cb or 0)
     printb(s,x-(w/2),y,c or 15,f or false,sc or 1,sm or false,cb or 0)
 end
-
 -- By Nesbox
 function pal(c0,c1)
  if(c0==nil and c1==nil)then for i=0,15 do poke4(0x3FF0*2+i,i)end
@@ -120,11 +114,7 @@ function col(x1,y1,w1,h1,x2,y2,w2,h2)return x1<x2+w2 and y1<y2+h2 and x2<x1+w1 a
 function col2(a,b)if a ~= b and col(a.x,a.y,a.w,a.h,b.x,b.y,b.w,b.h)then return true end end
 function col3(x1,y1,w1,h1,x2,y2,w2,h2)return x1+w1>=x2 and x1<=x2+w2 and y1+h1>=y2 and y1<=y2+h2 end
 function colT(x,y,w,h,tile)local x,y,w,h,tile = x or 0,y or 0,w or 8,h or 8,tile or 0;if mget((x+1)//8,(y+((h/2)+1))//8) == tile or mget((x+(w-1))//8,(y+((h/2)+1))//8) == tile or mget((x+1)//8,(y+(h-1))//8) == tile or mget((x+(w-1))//8,(y+(h-1))//8) == tile then return true end end
-
-function layer(a,b)
-	if a.y == b.y then return b.x < a.x end
-	return a.y < b.y
-end
+function layer(a,b)if a.y == b.y then return b.x < a.x end return a.y < b.y end
 
 local textOn = false
 -- If you are curious to know how this 
@@ -344,12 +334,13 @@ function Mob(x,y)
 	s.t = 0
 	s.hp = 1
 	s.sp = s.sp
-	s.spawntile = s.spawntile or 16
-	s.spawnx = x // 8
-	s.spawny = y // 8
+	s.spawntile = 1
+	s.spawmx = x // 8
+	s.spawmy = y // 8
+	s.tile = 16
 	s.anims = {}
-	s.die = false
-	s.collide = false
+	s.die = False
+	s.collide = False
 	s.atk = false
 	s.vanish = 0
 	s.timer = 0
@@ -380,7 +371,7 @@ function Mob(x,y)
 	end
 	
 	function s.move(s,dx,dy)
-		if s.die or s.atk then return end
+		if s.die == True or s.atk then return end
 		s.vx = dx
 		s.vy = dy
 		
@@ -393,8 +384,12 @@ function Mob(x,y)
 		s.y = s.y + s.vy
 	end
 	
+	function s.despawn(s)
+		mset(s.spawnx,s.spawny,s.spawntile)
+	end
+	
 	function s.damage(s,amount)
-		if not s.die then
+		if not (s.die == True) then
 			s.hit = 5
 			local amt = amount or 1
 			s.hp = s.hp - amt
@@ -438,7 +433,7 @@ function Mob(x,y)
 	function s.updateEnemy(s)
 		if s.type == "enemy" then
 			
-			if s.die then s.vanish = s.vanish + 1 end
+			if s.die == True then s.vanish = s.vanish + 1 end
 			if s.vanish > 100 then s.timer = s.timer + 1 end
 			
 			if s.vx ~= 0 then s.f = s.vx < 0 and 1 or 0 end
@@ -446,7 +441,7 @@ function Mob(x,y)
 			if s.hit > 0 then s.hit = s.hit - 1 end
 			if s.hitpause <= 0 then s.atk = false end
 			
-			if s.die then return end
+			if s.die == True then return end
 			
 			local dx = p.x - s.x
 			local dy = p.y - s.y
@@ -497,12 +492,12 @@ function Mob(x,y)
 			
 			if s.vx ~= 0 or s.vy ~= 0 then s.sp = anim(s.anims.walk)
 			elseif s.vx == 0 and s.vy == 0 then  s.sp = anim(s.anims.idle) end
-			if s.hp <= 0 then s.die = true s.sp = anim(s.anims.die) s.hit = 0
+			if s.hp <= 0 then s.die = True s.sp = anim(s.anims.die) s.hit = 0
 			elseif s.atk then s.sp = anim(s.anims.atk,16)end
 			
-			if colT(s.x,s.y,s.w,s.h,49) then s.die = true end
+			if colT(s.x,s.y,s.w,s.h,49) then s.die = True end
 			
-			if s.die then
+			if s.die == True then
 				s.sp = anim(s.anims.die)
 				for i=0,4 do
 					addParts({x = 2*i+s.x,y = s.y,c = 1,vy = - math.random(1,2)/2})
@@ -574,11 +569,11 @@ function Bat(x,y)
 			end
 		end
 		if s.timer < 105 and (s.timer//3)%2 == 0 then
-			if not s.die then
+			if not (s.die == True) then
 				sprc(271,s.x,s.y+3,0,1)
 			end
-			sprc(s.sp,s.x,s.y-4 + (s.die and 0 or (s.atk and 0 or s.dy)),s.c,1,s.f)
-			if _GAME.on then rectb(s.x-mx,s.y-4+(s.die and 0 or (s.atk and 0 or s.dy))-my,s.w,s.h,9)end
+			sprc(s.sp,s.x,s.y-4 + (s.die == True and 0 or (s.atk and 0 or s.dy)),s.c,1,s.f)
+			if _GAME.on then rectb(s.x-mx,s.y-4+(s.die == True and 0 or (s.atk and 0 or s.dy))-my,s.w,s.h,9)end
 		end
 		pal()
 	end
@@ -765,7 +760,7 @@ function Player(x,y)
 	end
 	
 	function s.onPotion(s)
-		if not s.die and s.hp < s.maxHp  and s.potions > 0 then
+		if not (s.die == False) and s.hp < s.maxHp  and s.potions > 0 then
 			s.potions = s.potions - 1
 			s.hp = s.hp + 20
 			if s.hp > s.maxHp then s.hp = s.maxHp end
@@ -788,7 +783,7 @@ function Player(x,y)
 	function s.update(s)
 		if s.hp <= 0 then s.sp = s.anims.die end
 		
-		if s.die then return end
+		if s.die == True then return end
 		s.vx = 0
 		s.vy = 0
 		bullet_timer = bullet_timer - 1
@@ -819,7 +814,7 @@ function Player(x,y)
 			bullet_timer = bmax_timer
 			table.insert(bullet,{sp = 272,x = s.x,y = s.y,vx = bvx*2,vy = bvy*2,f = bf,r = br,w = 8,h = 8})
 		end
-		if s.hp <= 0 then s.die = true s.hit = 0 end
+		if s.hp <= 0 then s.die = True s.hit = 0 end
 		
 		s:cam()
 		s:anim()
@@ -892,7 +887,7 @@ function safePoint(x,y)
 	local s = Mob(x,y)
 	s.type = "magic"
 	s.name = "safePoint"
-	s.spawntile = 50
+	s.tile = 50
 	
 	function s.update(s)
 		if col2(s,p)and butnp("a")then
@@ -902,6 +897,15 @@ function safePoint(x,y)
 			else
 				addDialog({"You don't need to be restored"})
 			end
+			for i=#mobs,1,-1 do
+				local m = mobs[i]
+				if m~=p and m~=s and m.name ~= "fairy" and m.name ~= "door" and m.type ~= "item" then
+					m:despawn()
+					table.remove(mobs,i)
+				end
+			end
+			spawnMobs()
+			Save()
 		end
 		s.dy = math.cos((t/16))*2
 	end
@@ -927,8 +931,7 @@ function NPC(name,sp,dialogs,type,spawn)
 		s.dpos = 0
 		s.dcolor = 0
 		s.over = not type == "npc"
-		s.collide = true
-		s.spawntile = spawn or 16
+		s.collide = True
 		
 		function s.onInteract(s)
 			s.dpos = (s.dpos%#dialogs)+1
@@ -949,9 +952,9 @@ function NPC(name,sp,dialogs,type,spawn)
 			sprc(271,s.x,s.y+2,0,1)
 			
 			if s.type == "npc" or s.type == "board" or s.type == "dummy"then
-				s.collide = true
+				s.collide = True
 			else
-				s.collide = false
+				s.collide = False
 			end
 			
 			sprc(s.sp,s.x,s.y,s.c,1,s.f)
@@ -976,8 +979,8 @@ end
 function Item(x,y)
 	local s = Mob(x,y)
 	s.type = "item"
-	s.pickUp = false
-	s.collide = false
+	s.pickUp = False
+	s.collide = False
 	s.t = 0
 	s.timer = 0
 	s.dy = 0
@@ -985,7 +988,7 @@ function Item(x,y)
 	s.range = 50
 	
 	function s.update(s)
-		if s.pickUp then return end
+		if s.pickUp == True then return end
 		
 		if s.name ~= "chest" then 
 		s.dy = math.cos(t/16)*2 end
@@ -994,7 +997,7 @@ function Item(x,y)
 		
 		if col2(p,s)then
 			s:onPickUp()
-			s.pickUp = true
+			s.pickUp = True
 		else
 			if s.timer > 40 then
 				s.t = s.t + 1
@@ -1003,7 +1006,7 @@ function Item(x,y)
 	end
 
 	function s.draw(s)
-		if not s.pickUp then
+		if not (s.pickUp == True) then
 			sprc(271,s.x,s.y+2,0,1)
 			sprc(s.sp,s.x,s.y+s.dy,s.c,1)
 			if _GAME.on then rectb(s.x-mx,s.y-my,s.w,s.h,9)end
@@ -1026,7 +1029,7 @@ function Coin(x,y)
 	end
 	
 	function s.update(s)
-		if s.pickUp then return end
+		if s.pickUp == True then return end
 		s:supUpdate()
 		s:seePlayer(p.x,p.y)
 		s.sp = anim({241,459,459})
@@ -1118,33 +1121,37 @@ function Chest(x,y)
 	local s = Item(x,y)
 	s.name = "chest"
 	s.sp = 224
-	s.collide = true
-	s.open = false
+	s.collide = True
+	s.open = False
 	function s.update(s)
-		if s.open then return end	
-		for _,m in ipairs(mobs)do if m.type == "enemy" and col2(m,s)then s.collide = false else s.collide = true end end	
+		if s.open == True then s.vanish = s.vanish + 1 end
+		if s.vanish > 100 then s.timer = s.timer + 1 end
+		if s.timer > 105 then s.collide = False end
+		if s.open == True then return end	
+		for _,m in ipairs(mobs)do if m.type == "enemy" and col2(m,s)then s.collide = False else s.collide = True end end	
 		if col2(p,s)and butnp("a")then
-			s.open = true
+			s.open = True
 			local id = math.random(1,#chest_item[1])
-			table.insert(mobs,chest_item[1][id](s.x,s.y+2))
+			table.insert(mobs,chest_item[1][id](s.x,s.y+6))
 			addDialog({chest_item[2][id]})
-		end
-		
+		end		
 		s.dy = math.sin((t/8))*2
 	end
 	
 	local flip = math.random(0,1)
 	function s.draw(s)
-		sprc(271,s.x,s.y,0,1)
-		if not s.open then 
-			sprc(s.sp,s.x,s.y,s.c,1,flip)
-			if col2(p,s)then
-				sprc(509,s.x,s.y-8+s.dy,11,1)
+		if s.timer < 105 and (s.timer//3)%2 == 0 then
+			sprc(271,s.x,s.y,0,1)
+			if not (s.open == True) then 
+				sprc(s.sp,s.x,s.y,s.c,1,flip)
+				if col2(p,s)then
+					sprc(509,s.x,s.y-8+s.dy,11,1)
+				end
+			else 
+				sprc(240,s.x,s.y,s.c,1)
 			end
-		else 
-			sprc(240,s.x,s.y,s.c,1)
+			if _GAME.on then rectb(s.x-1-mx,s.y+2-my,s.w+2,s.h-1,9)end
 		end
-		if _GAME.on then rectb(s.x-1-mx,s.y+2-my,s.w+2,s.h-1,9)end
 	end
 	return s
 end
@@ -1176,7 +1183,7 @@ function Exp(x,y)
 	end
 	
 	function s.update(s)
-		if s.pickUp then return end
+		if s.pickUp == True then return end
 		s:supUpdate()
 		s:seePlayer(p.x,p.y)
 	end
@@ -1188,27 +1195,26 @@ function Door(x,y)
 	s.type = "tile"
 	s.name = "door"
 	s.sp = 244
-	s.collide = true
-	s.open = false
-	s.spawntile = 16
+	s.collide = True
+	s.open = False
 	
 	function s.onInteract(s)
-		if butnp("a")and p.keys > 0 and s.open == false then
+		if butnp("a")and p.keys > 0 and s.open == False then
 			addDialog({"Unlocked"})
-			s.open = true
+			s.open = True
+			s.collide = False
 			p.keys = p.keys - 1
 		else
-			if not s.open then
+			if not (s.open == True) then
 				addDialog({"Locked"})
 			end
 		end
 		
-		if s.open == true then
-			s.collide = false
+		if s.open == True then
 		end
 	end
 	function s.draw(s)
-		if not s.open then
+		if not (s.open == True) then
 			sprc(s.sp,s.x,s.y,s.c,1)
 		else
 			sprc(245,s.x,s.y,s.c,1)
@@ -1224,7 +1230,6 @@ function doorRoom(oldId,nextId,textScreen)
 		s.name = "doorRoom"
 		s.id = oldId
 		s.sp = 443
-		s.spawntile = 1
 		textScreen = textScreen or ""
 		s.enter = false
 		
@@ -1246,6 +1251,7 @@ function doorRoom(oldId,nextId,textScreen)
 		end
 		
 		function s.draw(s)
+			mset(s.x//8,s.y//8,1)
 			local wp = printb(textScreen,0,-6,2,false,1,true)
 			local cb,doorx,doory = 0,(s.x-wp//3),s.y-16+s.dy
 			if mget(doorx//8,doory//8) == 0 then cb = 1 else cb = 0 end
@@ -1267,7 +1273,7 @@ end
 function Shop(x,y)
 	local s = Mob(x,y)
 	s.type = "sold"
-	s.collide = true
+	s.collide = True
 	s.price = 100
 	s.dy = 0
 	
@@ -1302,11 +1308,20 @@ function potionShop(x,y)
 	local s = Shop(x,y)
 	s.name = "potionShop"
 	s.sp = 225
-	s.spawntile = 29
 	
 	function s.buy(s)
 		p.potions = p.potions + 1
 		addDialog({"You bought a POTION!"})
+	end
+	
+	function s.draw(s)
+		mset(s.x//8,s.y//8,29)
+		sprc(s.sp,s.x,s.y-6+s.dy,s.c,1)
+		printb(s.price,s.x-mx,s.y+10-my,2,false,1,true)
+		
+		if col2(s,p)then
+			sprc(509,s.x,(s.y-16)+s.dy2,11,1)
+		end
 	end
 	return s
 end
@@ -1316,12 +1331,21 @@ function maShop(x,y)
 	s.name = "maShop"
 	s.sp = 227
 	s.price = 100
-	s.spawntile = 29
 	
 	function s.buy(s)
 		p.ma = 1
 		s.price = "sold"
 		addDialog({"You bought a \"Multiplied Arrows!\"","Now you can shoot more arrows than\nbefore!!"})
+	end
+	
+	function s.draw(s)
+		mset(s.x//8,s.y//8,29)
+		sprc(s.sp,s.x,s.y-6+s.dy,s.c,1)
+		printb(s.price,s.x-mx,s.y+10-my,2,false,1,true)
+		
+		if col2(s,p)then
+			sprc(509,s.x,(s.y-16)+s.dy2,11,1)
+		end
 	end
 	return s
 end
@@ -1331,11 +1355,11 @@ function Wall(sp)
 		local s = Mob(x,y)
 		s.type = "tile"
 		s.name = "wall"
-		s.collide = true
+		s.collide = True
 		s.sp = sp
 		
 		function s.draw(s)
-			if s.sp == 446 then s.collide = false else s.collide = true end
+			if s.sp == 446 then s.collide = False else s.collide = True end
 			if s.sp == 128 then s.c = 11 end
 			sprc(s.sp,s.x,s.y-8,s.c,1,0,0,1,2)
 		end
@@ -1348,7 +1372,7 @@ function Bestiary(x,y)
 	local s = Mob(x,y)
 	s.type = "book"
 	s.name = "bestiary"
-	s.collide = true
+	s.collide = True
 	s.sp = 156
 	
 	function s.update(s)
@@ -1525,7 +1549,7 @@ function spawnMobs()
 		[195] = Cerberus,
 		[196] = Hunter,
 		[197] = forsakenGoblin,
-		[209] = Fairy,
+		--[209] = Fairy,
 		
 		[160] = Wall(446),
 		[161] = Wall(447),
@@ -1615,8 +1639,9 @@ function spawnMobs()
 				local mob = spawn(x*8,y*8)
 				mob.spawnx = x
 				mob.spawny = y
+				mob.spawntile = mget(x,y)
 				table.insert(mobs,mob)
-				mset(x,y,mob.spawntile)
+				mset(x,y,mob.tile)
 			end
 		end
 	end
@@ -1626,12 +1651,31 @@ button = {}
 
 function buttonUpdate()
 	button[1] = {
-		{
+		--[[{
 			str = "Start Game",
 			desc = "Start your story!",
 			on = function(s)
 				trace("\n============ \nGAME\n============",4)
 				_GAME.state = STATE_LOADING
+			end
+		},--]]
+		{
+			str = "New Game",
+			desc = "Start your story!",
+			on = function(s)
+				trace("\n============ \nGAME\n============",4)
+				newGame()
+				_GAME.state = STATE_LOADING
+			end
+		},
+		{
+			str = "Load Game",
+			desc = "Start your story!",
+			on = function(s)
+				trace("\n============ \nGAME\n============",4)
+				if pmem(0)>0 then
+					_GAME.state = STATE_LOADING
+				end
 			end
 		},
 		{
@@ -1811,6 +1855,38 @@ function menuUpdate()
 	end
 end
 
+local save = {}
+function Save()
+	trace("\n============ \nSAVED\n============",5)
+	save.px,save.py = math.floor(p.x),math.floor(p.y)
+	save.fx = math.floor(p.x) save.fy = math.floor(p.y)
+	pmem(0,save.px)pmem(1,save.py)pmem(2,False)
+	pmem(3,p.maxHp)pmem(4,save.fx)pmem(5,save.fy)
+	pmem(6,p.exp)
+end
+
+function Load()
+	trace("\n============ \nLOADED\n============",2)
+	fade(-1)
+	p.x = pmem(0)p.y = pmem(1)p.die = pmem(2)
+	p.hp = pmem(3)f.x = pmem(4)+10 f.y = pmem(5)
+	p.exp = pmem(6)-10
+	for i=#mobs,1,-1 do
+		local m = mobs[i]
+		if m~=p and m~=s and m.name ~= "fairy" then
+			m:despawn()
+			table.remove(mobs,i)
+		end
+	end
+	spawnMobs()
+end
+
+function newGame()
+	trace("\n============ \nSAVE RESTARTn============",5)
+	fade(-1)
+	pmem(0,0)
+end
+
 function Music(track,loop)
 	if not startMusic then
 		music(track,-1,-1,loop)
@@ -1856,8 +1932,13 @@ function Loading()
 	--print(indexLoadMsg,10,10,3)
 	
 	if loadingTimer < 0 then
-		_GAME.state = STATE_GAME
-		fade(-1)
+		if pmem(0)>0 then
+			Load()
+			_GAME.state = STATE_GAME
+		else
+			_GAME.state = STATE_GAME
+		end
+		--fade(-1)
 	end
 end
 
@@ -1865,7 +1946,6 @@ function gameUpdate()
 	if global_hitpause > 0 then
 		global_hitpause = global_hitpause - 1
 	else
-		--spawnMobs()
 		for _,m in ipairs(mobs)do
 			m:update()
 		end
@@ -1910,6 +1990,7 @@ function gameUpdate()
 	if bestiaryOn then
 		bestiaryUpdate()
 	end
+	if butnp("b")then Load()end
 end
 
 function optionUpdate()
@@ -1973,10 +2054,10 @@ function gameOver()
 		if butnp("a") and gy == 60 then
 			b = 2
 		end
-		
 		if by > - 1 then
-			-- I need to work more on the load save system
-			by = -136
+			if pmem(0) > 0 then Load()
+			else newGame()end
+			gy,by,b = -16,-136,0
 		end
 	end
 end
@@ -2062,6 +2143,9 @@ function init()
 	rec = {}
 	
 	p = Player(26*8,77*8)
+	table.insert(mobs,p)
+	f = Fairy(5*8,77*8)
+	table.insert(mobs,f)
 	bullet = {}
 	bmax_timer = 30
 	bullet_timer = bmax_timer
@@ -2073,8 +2157,6 @@ function init()
 	textScreen = ""
 	textScreenTimer = -80
 	textScreenY = 68
-	
-	table.insert(mobs,p)
 	
 	dialog = {}
 	dialog_color = 12
