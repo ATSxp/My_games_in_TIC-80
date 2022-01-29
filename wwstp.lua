@@ -85,14 +85,7 @@ function sol(x,y)
 end
 
 function sprc(id,x,y,c,s,f,r,w,h)
-	local x = x or 0
-	local y = y or 0
-	local c = c or -1
-	local s = s or 1
-	local f = f or 0
-	local r = r or 0
-	local w = w or 1
-	local h = h or 1
+	local x,y,c,s,f,r,w,h = x or 0,y or 0,c or -1,s or 1,f or 0,r or 0,w or 1,h or 1
 	spr(id,x-mx,y-my,c,s,f,r,w,h)
 end
 
@@ -376,50 +369,23 @@ function Mob(x,y)
 	s.dy = 0
 	s.speed = 0.4
 	s.f = 0
-	s.c = - 1
+	s.c = 11
 	
 	function s.seePlayer(s,x1,y1)
 		local dx = x1 - s.x
 		local dy = y1 - s.y
 		local dst = math.sqrt((dx^2+dy^2))
-		local a = math.atan2(dy,dx)
-		
-		if  s.hitpause > 0 then
-			s.hitpause = s.hitpause - 1
-			s.hit = 0
-		else
-		
-			if dst > s.fov then
-				if dst <= s.range then
-					if math.abs(dx) >= s.speed then
-						s:move(math.cos(a)*s.speed,0)
-					end
-					if math.abs(dy) >= s.speed then
-						s:move(0,math.sin(a)*s.speed)
-					end
-				else
-					s.vx,s.vy = 0,0
-				end
-			else
-				s.vx,s.vy = 0,0
-			end
-		
-		end
+		local a = math.atan2(dy,dx)	
+		if dst > s.fov then if dst <= s.range then if math.abs(dx) >= s.speed then s:move(math.cos(a)*s.speed,0) end if math.abs(dy) >= s.speed then s:move(0,math.sin(a)*s.speed) end end end
 	end
 	
 	function s.move(s,dx,dy)
+		if s.die or s.atk then return end
 		s.vx = dx
 		s.vy = dy
 		
-		local x = s.x + s.vx
-		local y = s.y + s.vy
-		local w = s.w
-		local h = s.h
-		if 
-			sol(x+1,y+((h/2)+1))or 
-			sol(x+(w-1),y+((h/2)+1))or 
-			sol(x+1,y+(h-1))or
-			sol(x+(w-1),y+(h-1))then
+		local x,y,w,h = s.x + s.vx,s.y + s.vy,s.w,s.h
+		if sol(x+1,y+((h/2)+1))or sol(x+(w-1),y+((h/2)+1))or sol(x+1,y+(h-1))or sol(x+(w-1),y+(h-1))then
 			s.vx,s.vy = 0,0
 		end
 		
@@ -436,7 +402,7 @@ function Mob(x,y)
 	end
 	
 	function s.attack(s)
-		if not s.atk and not s.die then
+		if not s.atk then
 			if p.shield <= 0 then 
 				p:damage(s.dmg)
 				local oldx,oldy = p.x,p.y
@@ -471,16 +437,42 @@ function Mob(x,y)
 	
 	function s.updateEnemy(s)
 		if s.type == "enemy" then
-		
+			
 			if s.die then s.vanish = s.vanish + 1 end
 			if s.vanish > 100 then s.timer = s.timer + 1 end
-			
-			if s.die then return end
 			
 			if s.vx ~= 0 then s.f = s.vx < 0 and 1 or 0 end
 			
 			if s.hit > 0 then s.hit = s.hit - 1 end
 			if s.hitpause <= 0 then s.atk = false end
+			
+			if s.die then return end
+			
+			local dx = p.x - s.x
+			local dy = p.y - s.y
+			local dst = math.sqrt((dx^2+dy^2))
+			local a = math.atan2(dy,dx)
+			
+			if  s.hitpause > 0 then
+				s.hitpause = s.hitpause - 1
+				s.hit = 0
+			else
+			
+				if dst > s.fov then
+					if dst <= s.range then
+						if math.abs(dx) >= s.speed then
+							s:move(math.cos(a)*s.speed,0)
+						end
+						if math.abs(dy) >= s.speed then
+							s:move(0,math.sin(a)*s.speed)
+						end
+					else
+						s.vx,s.vy = 0,0
+					end
+				else
+					s.vx,s.vy = 0,0
+				end			
+			end
 			
 			local dst = math.sqrt(((p.x-s.x)^2+(p.y-s.y)^2))
 			if dst <= s.fov then
@@ -515,10 +507,9 @@ function Mob(x,y)
 				for i=0,4 do
 					addParts({x = 2*i+s.x,y = s.y,c = 1,vy = - math.random(1,2)/2})
 				end
-				table.insert(mobs,chest_item[1][math.random(1,3)](s.x,s.y+4))
-				table.insert(mobs,Exp(s.x,s.y))
-			end
-			
+				table.insert(mobs,chest_item[1][math.random(1,2)](s.x,s.y+4))
+				table.insert(mobs,Exp(s.x,s.y))--]]
+			end	
 		end
 	end
 	return s
@@ -530,7 +521,6 @@ function Goblin(x,y)
 	s.name = "goblin"
 	s.sp = 304
 	s.hp = 15
-	s.c = 11
 	s.anims = {
 		walk = {305,306},
 		idle = {304},
@@ -546,10 +536,7 @@ function Goblin(x,y)
 	
 	function s.update(s)
 		s:supUpdate()
-		if not s.die then			
-			s:seePlayer(p.x,p.y)
-			s.dmg = math.random(1,2)
-		end
+		s.dmg = math.random(1,2)
 	end
 	
 	return s
@@ -560,7 +547,6 @@ function Bat(x,y)
 	s.type = "enemy"
 	s.name = "bat"
 	s.sp = 320
-	s.c = 11
 	s.dy = 0
 	s.anims = {
 		idle = {320,321},
@@ -578,10 +564,7 @@ function Bat(x,y)
 	
 	function s.update(s)
 		s:supUpdate()
-		if not s.die then			
-			s:seePlayer(p.x,p.y)
-			s.dy = math.sin(t/8)*2
-		end
+		s.dy = math.sin(t/8)*2
 	end
 	
 	function s.draw(s)
@@ -608,7 +591,6 @@ function Skeleton(x,y)
 	s.type = "enemy"
 	s.name = "skeleton"
 	s.sp = 336
-	s.c = 11
 	s.anims = {
 		idle = {336},
 		walk = {337,338},
@@ -625,9 +607,6 @@ function Skeleton(x,y)
 	
 	function s.update(s)
 		s:supUpdate()	
-		if not s.die then			
-			s:seePlayer(p.x,p.y)
-		end
 	end
 	
 	return s
@@ -638,7 +617,6 @@ function Cerberus(x,y)
 	s.type = "enemy"
 	s.name = "cerberus"
 	s.sp = 352
-	s.c = 11
 	s.anims = {
 		idle = {352,353},
 		walk = {354,355},
@@ -655,10 +633,7 @@ function Cerberus(x,y)
 	
 	function s.update(s)
 		s:supUpdate()
-		if not s.die then			
-			s:seePlayer(p.x,p.y)
-			s.dmg = math.random(1,3)
-		end
+		s.dmg = math.random(1,3)
 	end
 	
 	return s
@@ -669,17 +644,16 @@ function Hunter(x,y)
 	s.type = "enemy"
 	s.name = "adventurer_hunter"
 	s.sp = 368
-	s.c = 11
 	s.dmg = 1
 	s.hp = 5
 	s.range = 130
 	s.fov = 8*12
 	s.supUpdate = s.update
 	s.anims = {
-		idle = {368},
-		walk = {369,370},
-		atk = {371},
-		die = {372},
+		idle = {368,369},
+		walk = {370,371},
+		atk = {372,373},
+		die = {374},
 	}
 	
 	function s.createBullet(s,x,y,vx,vy)
@@ -687,25 +661,65 @@ function Hunter(x,y)
 		b.sp = {291,292}
 		b.animSpeed = 2
 		b.dmg = s.dmg
-		b.range = 100
+		b.range = s.range
 		return b
 	end
 	
 	function s.attack(s)
-		if not s.atk and not s.die then
+		if not s.atk then
 			local speed,dir,a = 1.5,(s.x-p.x)>0 and 0 or 2,angle(p.x,p.y,s.x,s.y)
 			local b = s:createBullet(s.x+dir,s.y+4,-speed*math.cos(a),-speed*math.sin(a))
 			table.insert(enemyBullet,b)
+			s.hitpause = 40
 			s.atk = true
 		end
 	end
 	
 	function s.update(s)
 		s:supUpdate()
-		if not s.die then			
-			s:seePlayer(p.x,p.y)
-			s.dmg = math.random(1,3)
+		s.dmg = math.random(1,2)
+	end
+	return s
+end
+
+function forsakenGoblin(x,y)
+	local s = Mob(x,y)
+	s.type = "enemy"
+	s.name = "forsaken_goblin"
+	s.sp = 384
+	s.anims = {
+		idle = {384,385},
+		walk = {386,387},
+		atk = {388,389},
+		die = {390},
+	}
+	s.hp = 3
+	s.dmg = 1
+	s.range = 140
+	s.fov = 8*10
+	s.supUpdate = s.update
+	
+	function s.createBullet(s,x,y,vx,vy)
+		local b = Bullet(x,y,vx,vy)
+		b.sp = {289,290}
+		b.animSpeed = 1
+		b.dmg = s.dmg
+		b.range = s.range
+		return b
+	end
+	
+	function s.attack(s)
+		if not s.atk then
+			local speed,dir,a = 1.5,(s.x-p.x)>0 and 0 or 2,angle(p.x,p.y,s.x,s.y)
+			local b = s:createBullet(s.x+dir,s.y+4,-speed*math.cos(a),-speed*math.sin(a))
+			table.insert(enemyBullet,b)
+			s.hitpause = 40
+			s.atk = true
 		end
+	end
+	
+	function s.update(s)
+		s:supUpdate()
 	end
 	return s
 end
@@ -725,7 +739,6 @@ function Player(x,y)
 	s.da = 0 -- "Diamond Arrows" Power Up
 	s.shield = 0
 	s.sp = 256
-	s.c = 11
 	s.f = 1
 	s.dmgExtra = 0
 	s.dmg = 1 + s.dmgExtra
@@ -833,9 +846,8 @@ function Fairy(x,y)
 	s.type = "friend"
 	s.name = "fairy"
 	s.sp = 274
-	s.c = 11
 	s.speed = 0.9
-	s.fov = 23
+	s.fov = 8*2
 	s.range = 1000
 	s.timer = 100
 	s.dy = 0
@@ -911,7 +923,6 @@ function NPC(name,sp,dialogs,type,spawn)
 		s.type = type or "npc"
 		s.name = name
 		s.hp = nil
-		s.c = 11
 		s.sp =  sp
 		s.dpos = 0
 		s.dcolor = 0
@@ -969,7 +980,6 @@ function Item(x,y)
 	s.collide = false
 	s.t = 0
 	s.timer = 0
-	s.c = - 1
 	s.dy = 0
 	s.fov = 0
 	s.range = 50
@@ -1006,7 +1016,6 @@ function Coin(x,y)
 	local s = Item(x,y)
 	s.name = "coin"
 	s.sp = 241
-	s.c = 11
 	s.speed = 2
 	s.supUpdate = s.update
 	
@@ -1029,7 +1038,6 @@ function coinExchange(x,y)
 	local s = Item(x,y)
 	s.name = "ce"
 	s.sp = 242
-	s.c = 11
 	
 	function s.onPickUp(s)
 		local rnd = math.random(20,50)
@@ -1043,7 +1051,6 @@ function Potion(x,y)
 	local s = Item(x,y)
 	s.name = "potion"
 	s.sp = 225
-	s.c = 11
 	
 	function s.onPickUp(s)
 		p.potions = p.potions + 1
@@ -1056,7 +1063,6 @@ function Boost(x,y)
 	local s = Item(x,y)
 	s.name = "boost"
 	s.sp = 226
-	s.c = 11
 	
 	function s.onPickUp(s)
 		addDialog({"You got a \"Boost\"","You can run faster for a limited time."})
@@ -1069,7 +1075,6 @@ function diamondArrow(x,y)
 	local s = Item(x,y)
 	s.name = "da"
 	s.sp = 228
-	s.c = 11
 	
 	function s.onPickUp(s)
 		addDialog({"You got Diamond Arrow!","Now your arrow is stronger!!"})
@@ -1082,7 +1087,6 @@ function multipleArrows(x,y)
 	local s = Item(x,y)
 	s.name = "ma"
 	s.sp = 227
-	s.c = 11
 	
 	function s.onPickUp(s)
 		addDialog({"You got \"Multiplied Arrows!\"","Now you can shoot more arrows than\nbefore!!"})
@@ -1095,7 +1099,6 @@ function magicShield(x,y)
 	local s = Item(x,y)
 	s.name = "shield"
 	s.sp = 229
-	s.c = 11
 	
 	function s.onPickUp(s)
 		addDialog({"You got \"Magic Shield\""})
@@ -1105,8 +1108,8 @@ function magicShield(x,y)
 end
 
 chest_item = {
-	-- 1, 2,           3,   4,    5,          6,  7,
-	{Coin,coinExchange,Coin,Boost,magicShield,Bat,Potion},
+	-- 1, 2				3,   								4,    5,          6,  7,
+	{Coin,Coin,coinExchange,Boost,magicShield,Bat,Potion},
 	-- 1, 2, 3,  4,  5,  6,                    7,
 	{nil,nil,nil,nil,nil,"Watch out! A bat!!!",nil}
 }
@@ -1116,7 +1119,6 @@ function Chest(x,y)
 	s.name = "chest"
 	s.sp = 224
 	s.collide = true
-	s.c = 11
 	s.open = false
 	function s.update(s)
 		if s.open then return end	
@@ -1151,7 +1153,6 @@ function Key(x,y)
 	local s = Item(x,y)
 	s.name = "key"
 	s.sp = 243
-	s.c = 11
 	
 	function s.onPickUp(s)
 		addDialog({"You found a key!"})
@@ -1164,7 +1165,6 @@ function Exp(x,y)
 	local s = Item(x,y)
 	s.name = "exp"
 	s.sp = 246
-	s.c = 11
 	s.speed = 1.5
 	s.supUpdate = s.update
 	
@@ -1190,7 +1190,6 @@ function Door(x,y)
 	s.sp = 244
 	s.collide = true
 	s.open = false
-	s.c = 11
 	s.spawntile = 16
 	
 	function s.onInteract(s)
@@ -1224,7 +1223,6 @@ function doorRoom(oldId,nextId,textScreen)
 		s.type = "tile"
 		s.name = "doorRoom"
 		s.id = oldId
-		s.c = 11
 		s.sp = 443
 		s.spawntile = 1
 		textScreen = textScreen or ""
@@ -1269,7 +1267,6 @@ end
 function Shop(x,y)
 	local s = Mob(x,y)
 	s.type = "sold"
-	s.c = 11
 	s.collide = true
 	s.price = 100
 	s.dy = 0
@@ -1336,7 +1333,6 @@ function Wall(sp)
 		s.name = "wall"
 		s.collide = true
 		s.sp = sp
-		s.c = 11
 		
 		function s.draw(s)
 			if s.sp == 446 then s.collide = false else s.collide = true end
@@ -1352,7 +1348,6 @@ function Bestiary(x,y)
 	local s = Mob(x,y)
 	s.type = "book"
 	s.name = "bestiary"
-	s.c = 11
 	s.collide = true
 	s.sp = 156
 	
@@ -1529,6 +1524,7 @@ function spawnMobs()
 		[194] = Skeleton,
 		[195] = Cerberus,
 		[196] = Hunter,
+		[197] = forsakenGoblin,
 		[209] = Fairy,
 		
 		[160] = Wall(446),
