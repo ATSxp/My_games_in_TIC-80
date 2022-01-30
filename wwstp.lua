@@ -11,7 +11,7 @@ t = 0
 
 _GAME = {}
 _GAME.on = false
-_GAME.fps = false
+_GAME.fps = true
 _GAME.state = 1
 
 local False,True = 0,1
@@ -538,7 +538,7 @@ function Goblin(x,y)
 	s.type = "enemy"
 	s.name = "goblin"
 	s.sp = 304
-	s.hp = 15
+	s.hp = 5
 	s.anims = {
 		walk = {305,306},
 		idle = {304},
@@ -615,7 +615,7 @@ function Skeleton(x,y)
 		atk = {339,340},
 		die = {341},
 	}
-	s.hp = 20
+	s.hp = 10
 	s.speed = 0.3
 	s.range = 20
 	s.dmg = 3
@@ -641,7 +641,7 @@ function Cerberus(x,y)
 		atk = {356,357},
 		die = {358},
 	}
-	s.hp = 10
+	s.hp = 5
 	s.range = 80
 	s.speed = 1
 	s.dmg = math.random(1,3)
@@ -1516,7 +1516,6 @@ function bestiaryUpdate()
 			info = {},
 		},
 		{
-			name = "",
 			desc = "\t\tFinally, I want to thank an unnamed\nadventurer who wanted to help me for\ncompleting this book, unfortunately he\nfell into a hole in a dungeon and I never\nsaw him again... he had a certain addiction\nto collecting things.",
 			info = {},
 		},
@@ -1524,14 +1523,27 @@ function bestiaryUpdate()
 			name = "Bat",
 			sp = {320,321,322,323,324},
 			desc = "\t\tA rather annoying and annoying being,\nhe uses his echolocation to fly around\nthe dungeon.\t\tThey are fast, but also\nquite weak, most of them walk in packs,\nmaking it easier to attack the chosen\ntarget.",
-			info = {
-				"Level: low",
-				"Hp: 1/2",
-				"Atk: 1",
-			},
+			info = {"Level: low","Hp: 1/2","Atk: 1"},
+		},
+		{
+			name = "Goblin",
+			sp = {304,305,306,307,308,309},
+			desc = "\t\tA being that likes to attack any\nadventurer, he is often armed with a\ndagger using his rags.\t\tBe careful if you\nfind him with his pack, they are stronger\nthan they seem together.",
+			info = {"Level: low","Hp: 5","Atk: 1/2"},
+		},
+		{
+			name = "Skeleton",
+			sp = {336,337,338,339,340,341},
+			desc = "\t\tIt is believed that in his lifetime he\nwas a soldier of some tribe, kingdom or\nany civilization.\t\tThe Demon King saw an\nopportunity to use the dead as his\nsubjects so he used necromancy magic to\n\"revive\" the dead.\t\tThis monster is one\nof the strongest among the other\ndungeon monsters.",
+			info = {"Level: hard","Hp: 10","Atk: 3"},
+		},
+		{
+			name = "Cerberus",
+			sp = {352,354,356,357,358},
+			desc = "\t\tUndoubtedly the fastest monster in\nthe dungeon, if you see him, I recommend\nyou to run!\t\tAlthough even running he\ncan catch you... well... me... just good\nluck with him.",
+			info = {"Level: middle","Hp: 5","Atk: 1/3"},
 		},
 	}
-
 	global_hitpause = 1
 	clip(10,10,240-20,136-20)
 	cls()
@@ -1556,9 +1568,9 @@ function bestiaryUpdate()
 			for i=1,#v.info do
 				printb(v.info[i],x-3,8*i+y+28,3,false,1,true,1)
 			end
-			if #v.info > 0 then  rectb(x-6,y+34,47,68,3)end
-			printc(v.name,120,15,3,false,1,false,1)
-			printb(v.desc,70,30,3,false,1,true,1)
+			if #v.info > 0 then  rectb(x-6,y+34,51,68,3)end
+			printc(v.name or "",120,15,3,false,1,false,1)
+			printb(v.desc or "",70,30,3,false,1,true,1)
 			rectb(67,27,146,95,3)
 			printb(_.."/"..#beast,12,12,3,false,1,true)
 		end
@@ -2187,7 +2199,6 @@ function gameOver()
 		textOn = true
 		gy = gy + (gy<60 and 1 or 0)
 		local w = printb(str,0,-16,3,false,2,false,1)
-		
 		spr(380,(240-(16*4))//2,11,11,4,0,0,2,2)
 		spr(382,(240-32)//2,25,11,2,0,0,2,2)
 		printc(str,120,gy,3,false,2,false)
