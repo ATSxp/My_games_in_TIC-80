@@ -148,26 +148,26 @@ function drawTextBox()
 	rect(dix + 8,diy + 1,240 - 16,68 - 1,3)
 	
 	for i = 1,29 - 1 do
-		spr(503,8 * i + dix,diy,11,1)
-		spr(503,8 * i + dix,diy + 68 - 8,11,1,0,2)
+		spr(302,8 * i + dix,diy,11,1)
+		spr(302,8 * i + dix,diy + 68 - 8,11,1,0,2)
 	end
 	for i = 1,(17 / 2) - 1 do
-		spr(503,dix,8 * i + diy,11,1,1,1)
-		spr(503,dix + 240 - 8,8 * i + diy,11,1,0,1)
+		spr(302,dix,8 * i + diy,11,1,1,1)
+		spr(302,dix + 240 - 8,8 * i + diy,11,1,0,1)
 	end
 	for i = 1,16 do
-		spr(504,16 * i + dix,diy,11,1)
-		spr(504,16 * i + dix,diy + 68 - 8,11,1,0,2)
+		spr(303,16 * i + dix,diy,11,1)
+		spr(303,16 * i + dix,diy + 68 - 8,11,1,0,2)
 	end
 	for i = 1,(17 / 2) - 5 do
-		spr(504,dix,16 * i + diy,11,1,1,1)
-		spr(504,dix + 240 - 8,16 * i + diy,11,1,0,1)
+		spr(303,dix,16 * i + diy,11,1,1,1)
+		spr(303,dix + 240 - 8,16 * i + diy,11,1,0,1)
 	end
 	
-	spr(502,dix,diy,11,1)
-	spr(502,dix + 240 - 8,diy,11,1,1)
-	spr(502,dix,diy + 68 - 8,11,1,1,2)
-	spr(502,dix + 240 - 8,diy + 68 - 8,11,1,2,1)
+	spr(301,dix,diy,11,1)
+	spr(301,dix + 240 - 8,diy,11,1,1)
+	spr(301,dix,diy + 68 - 8,11,1,1,2)
+	spr(301,dix + 240 - 8,diy + 68 - 8,11,1,2,1)
 	
 	if dialog_name ~= nil then
 		-- icon
@@ -374,6 +374,7 @@ function Mob(x,y)
 	s.vy = 0
 	s.dy = 0
 	s.speed = 0.4
+	s.animSpeed = 8
 	s.f = 0
 	s.c = 11
 	
@@ -427,6 +428,7 @@ function Mob(x,y)
 	end
 	
 	local rnd = math.random(32,128)
+	local rnd2 = math.random(30,17*2)
 	function s.update(s)
 		s:updateEnemy()
 	end
@@ -456,7 +458,7 @@ function Mob(x,y)
 			if s.hit > 0 then s.hit = s.hit - 1 end
 			if s.hitpause <= 0 then s.atk = false end
 			
-			if s.timer > 105 then for i=#mobs,1,-1 do local m = mobs[i];if m == s then	table.remove(mobs,i)	end	end end
+			if s.timer > 105 then for i=#mobs,1,-1 do local m = mobs[i];if m == s and m.name ~= "king_demon" then	table.remove(mobs,i)	end	end end
 			
 			if s.die == True then return end
 			
@@ -507,20 +509,28 @@ function Mob(x,y)
 				end
 			end
 			
-			if s.vx ~= 0 or s.vy ~= 0 then s.sp = anim(s.anims.walk)
-			elseif s.vx == 0 and s.vy == 0 then  s.sp = anim(s.anims.idle) end
-			if s.hp <= 0 then s.die = True s.sp = anim(s.anims.die) s.hit = 0
+			if s.vx ~= 0 or s.vy ~= 0 then s.sp = anim(s.anims.walk,s.animSpeed)
+			elseif s.vx == 0 and s.vy == 0 then  s.sp = anim(s.anims.idle,s.animSpeed) end
+			if s.hp <= 0 then s.die = True s.sp = anim(s.anims.die,s.animSpeed) s.hit = 0
 			elseif s.atk then s.sp = anim(s.anims.atk,16)end
 			
 			if colT(s.x,s.y,s.w,s.h,49) then s.die = True end
 			
 			if s.die == True then
-				s.sp = anim(s.anims.die)
+				s.sp = anim(s.anims.die,s.animSpeed)
 				for i=0,4 do
 					addParts({x = 2*i+s.x,y = s.y,c = 1,vy = - math.random(1,2)/2})
 				end
-				table.insert(mobs,chest_item[1][math.random(1,2)](s.x,s.y+4))
-				table.insert(mobs,Exp(s.x,s.y))--]]
+				if m ~= "king_demon" then
+					table.insert(mobs,chest_item[1][math.random(1,2)](s.x,s.y+4))
+					table.insert(mobs,Exp(s.x,s.y))
+				else
+					for i=0,30 do
+						for j=0,30 do
+							table.insert(mobs,Exp(8*i+rnd2,8*j+rnd2))
+						end
+					end
+				end
 			end
 			
 		end
@@ -737,6 +747,91 @@ function forsakenGoblin(x,y)
 	return s
 end
 
+function Boss(x,y)
+	local s = Mob(x,y)
+	s.type = "enemy"
+	s.name = "king_demon"
+	s.sp = 400
+	s.anims = {
+		idle = {400,402},
+		walk = {404,406},
+		atk = {432,434},
+		die = {436},
+	}
+	s.hp = 10
+	s.w = 16
+	s.h = 16
+	s.range = 150
+	s.fov = 8*8
+	s.dmg = 1
+	s.animSpeed = 16
+	s.minDelayAtk = 40
+	s.maxDelayAtk = 120
+	s.supUpdate = s.update
+	
+	function s.createBullet(s,x,y,vx,vy)
+		local b = Bullet(x,y,vx,vy)
+		b.dmg = s.dmg
+		b.range = s.range
+		b.sp = {293,294,295,295,294,293}
+		b.animSpeed = s.animSpeed
+		return b
+	end
+	
+	function s.attack(s)
+		if not s.atk then
+			local num = 8
+			if s.hp > 3 then num = 8 else num = 16 end
+			for i=1,8 do
+			local speed,dir,a = 1.5,(s.x-p.x)>0 and 0 or 2,math.random()*4*(math.pi*4)--angle(p.x,p.y,s.x,s.y)
+			local b = s:createBullet(s.x+dir,s.y+2,-speed*math.cos(a),-speed*math.sin(a))
+			table.insert(enemyBullet,b)
+			end
+			s.hitpause = 80
+			s.atk = true
+		end
+	end
+	
+	function s.update(s)
+		if bossBattle then
+			s:supUpdate()
+			s.dmg = math.random(1,5)
+			if s.hp <= 3 then
+				s.minDelayAtk = 0
+				s.maxDelayAtk = 10
+				s.animSpeed = 8
+			end
+		end
+		if s.die == True then
+			unlockRoom(224,102,226,102)
+			bossBattle = false
+	 end
+	end
+	
+	function s.draw(s)
+		if s.hit > 0 then
+			for i=0,15 do
+				pal(i,2)
+			end
+		end
+		sprc(268,s.x,s.y+3,0,1,0,0,2,2)
+		sprc(s.sp,s.x,s.y,s.c,1,s.f,0,2,2)
+		if _GAME.on then rectb(s.x-mx,s.y-my,s.w,s.h,9)end
+		if bossBattle then
+			spr(412,240-8,0,11,1)
+			spr(412,240-8,6*10-3,11,1,0,2)
+			for i=1,10-1 do
+				spr(413,240-8,6*i,-1,1)
+			end
+			for i=1,s.hp do
+				spr(478,240-8,6*i-4,s.c,1)
+			end
+		end
+		pal()
+	end
+	return s
+end
+
 function Player(x,y)
 	local s = Mob(x,y)
 	s.type = "hero"
@@ -765,9 +860,13 @@ function Player(x,y)
 	
 	function s.cam(s)
 		local x,y = s.x//240*240,s.y//136*136
+		if p.x > 210*8 and (p.y > 101*8 and p.y < 135*8) then
+			my = math.min(119*8,math.max(102*8,math.floor(p.y) - 68))
+		else
 		if x ~= mx or y ~= my then
 			mx = x
 			my = y
+		end
 		end
 	end
 	
@@ -1569,7 +1668,7 @@ function spawnMobs()
 		[195] = Cerberus,
 		[196] = Hunter,
 		[197] = forsakenGoblin,
-		--[209] = Fairy,
+		[198] = Boss,
 		
 		[160] = Wall(446),
 		[161] = Wall(447),
@@ -1767,10 +1866,10 @@ function Hud()
 	end
 	
 	rect(5+10,136-9,p.exp,8,3)
-	spr(505,5+8,136-9,11,1)
-	spr(505,5*24-11,136-9,11,1,1)
+	spr(428,5+8,136-9,11,1)
+	spr(428,5*24-11,136-9,11,1,1)
 	for i = 1,11 do
-		spr(506,8*i+(5+8),136-9,11,1)
+		spr(429,8*i+(5+8),136-9,11,1)
 	end
 	printb("EXP",((13*9)//2),136-8,3,false,1,true,1)
 	
@@ -1896,6 +1995,7 @@ end
 function Load()
 	trace("\n============ \nLOADED\n============",2)
 	fade(-1)
+	bossBattle = false
 	p.x = pmem(0)p.y = pmem(1)p.die = pmem(2)
 	p.hp = pmem(3)f.x = pmem(4)+10 f.y = pmem(5)
 	p.exp = pmem(6)-10
@@ -1910,9 +2010,21 @@ function Load()
 end
 
 function newGame()
-	trace("\n============ \nSAVE RESTARTn============",5)
+	trace("\n============ \nSAVE RESTART\n============",5)
 	fade(-1)
+	for i=#mobs,1,-1 do
+		local m = mobs[i]
+		if m~=p and m~=s and m.name ~= "fairy" then
+			m:despawn()
+			table.remove(mobs,i)
+		end
+	end
+	spawnMobs()
+	bossBattle = false
 	pmem(0,0)
+	p.x,p.y = 26*8,77*8
+	p.die = False
+	p.hp = p.maxHp
 end
 
 function Music(track,loop)
@@ -1970,6 +2082,15 @@ function Loading()
 	end
 end
 
+function Event()
+	if p.x >= 211 and p.y > 104*8 then
+		lockRoom(224,102,226,102)
+		bossBattle = true
+	elseif	bossBattle == false then
+		unlockRoom(224,102,226,102)
+	end
+end
+
 function gameUpdate()
 	if global_hitpause > 0 then
 		global_hitpause = global_hitpause - 1
@@ -2018,6 +2139,7 @@ function gameUpdate()
 	if bestiaryOn then
 		bestiaryUpdate()
 	end
+	Event()
 end
 
 function optionUpdate()
@@ -2161,6 +2283,7 @@ function init()
 	STATE_CREDITS = 4
 	startMusic = false
 	bestiaryOn = false
+	bossBattle = false
 	openingTimer = 100
 	loadingTimer = math.random(100,500)
 	
