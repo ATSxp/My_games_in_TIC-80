@@ -12,7 +12,7 @@ t = 0
 _GAME = {}
 _GAME.on = false
 _GAME.fps = false
-_GAME.state = 0
+_GAME.state = 1
 
 local False,True = 0,1
 local exp = math.random(1,50)
@@ -428,7 +428,8 @@ function Mob(x,y)
 	end
 	
 	local rnd = math.random(32,128)
-	local rnd2 = math.random(30,17*2)
+	local rnd2 = math.random(211*8,238*8)
+	local rnd3 = math.random(102*8,134*8)
 	function s.update(s)
 		s:updateEnemy()
 	end
@@ -521,15 +522,9 @@ function Mob(x,y)
 				for i=0,4 do
 					addParts({x = 2*i+s.x,y = s.y,c = 1,vy = - math.random(1,2)/2})
 				end
-				if m ~= "king_demon" then
+				if s.name ~= "king_demon" then
 					table.insert(mobs,chest_item[1][math.random(1,2)](s.x,s.y+4))
 					table.insert(mobs,Exp(s.x,s.y))
-				else
-					for i=0,30 do
-						for j=0,30 do
-							table.insert(mobs,Exp(8*i+rnd2,8*j+rnd2))
-						end
-					end
 				end
 			end
 			
@@ -758,7 +753,7 @@ function Boss(x,y)
 		atk = {432,434},
 		die = {436},
 	}
-	s.hp = 10
+	s.hp = 22
 	s.w = 16
 	s.h = 16
 	s.range = 150
@@ -781,11 +776,11 @@ function Boss(x,y)
 	function s.attack(s)
 		if not s.atk then
 			local num = 8
-			if s.hp > 3 then num = 8 else num = 16 end
-			for i=1,8 do
-			local speed,dir,a = 1.5,(s.x-p.x)>0 and 0 or 2,math.random()*4*(math.pi*4)--angle(p.x,p.y,s.x,s.y)
-			local b = s:createBullet(s.x+dir,s.y+2,-speed*math.cos(a),-speed*math.sin(a))
-			table.insert(enemyBullet,b)
+			if s.hp > 22/2 then num = 8 else num = 16 end
+			for i=1,num do
+				local speed,dir,a = 1.5,4,math.random()*4*(math.pi*4)--angle(p.x,p.y,s.x,s.y)
+				local b = s:createBullet(s.x+dir,s.y+2,-speed*math.cos(a),-speed*math.sin(a))
+				table.insert(enemyBullet,b)
 			end
 			s.hitpause = 80
 			s.atk = true
@@ -819,8 +814,8 @@ function Boss(x,y)
 		if _GAME.on then rectb(s.x-mx,s.y-my,s.w,s.h,9)end
 		if bossBattle then
 			spr(412,240-8,0,11,1)
-			spr(412,240-8,6*10-3,11,1,0,2)
-			for i=1,10-1 do
+			spr(412,240-8,136-8,11,1,0,2)
+			for i=1,22-1 do
 				spr(413,240-8,6*i,-1,1)
 			end
 			for i=1,s.hp do
@@ -933,6 +928,7 @@ function Player(x,y)
 		end
 		if s.hp <= 0 then s.die = True s.hit = 0 end
 		
+
 		s:cam()
 		s:anim()
 		s:levelUp()
@@ -1989,6 +1985,7 @@ function Save()
 			table.remove(mobs,i)
 		end
 	end
+	enemyBullet = {}
 	spawnMobs()
 end
 
@@ -2006,6 +2003,7 @@ function Load()
 			table.remove(mobs,i)
 		end
 	end
+	enemyBullet = {}
 	spawnMobs()
 end
 
