@@ -207,7 +207,7 @@ function updateDialog()
 			printb(string.sub(str,1,text_pos),dix + 10,diy + 10,2,false,1,false)
 			spr(anim({507,508},24),dix + 240 - 24,diy + 68 - 22,11,2)
 			global_hitpause = 1
-			if text_pos < len and t % 4 == 0 then text_pos = text_pos + 1 end
+			if text_pos < len and t%4==0 then text_pos = text_pos + 1 sfx(7,"D-3",-1,1,4)end
 		end
 		textOn = true
 	else
@@ -323,6 +323,7 @@ function bulletUpdate()
 	for i,v in ipairs(bullet)do
 		local x,y,w,h = v.x + v.vx,v.y + v.vy,v.w,v.h
 		if sol(x,y +(h / 2 + 1))or sol(x + (w - 1),y + (h / 2 + 1))or sol(x,y + (h - 1))or sol(x + (w - 1),y + (h - 1))then
+			sfx(12,"E-4")
 			local Oldx,Oldy = v.x,v.y
 			addParts({x = Oldx,y = Oldy,s = math.random(2,5),c = math.random(0,2),vx = math.random(-1,1),vy = math.random(-1,1)})
 			addParts({mode = 4,x = Oldx,y = Oldy,s = math.random(2,5),c = math.random(0,2),vx = math.random(-1,1),vy = math.random(-1,1)})
@@ -417,6 +418,7 @@ function Mob(x,y)
 	
 	function s.attack(s)
 		if not s.atk then
+			sfx(4,"C-6",30,0,13) -- sound atk
 			if p.shield <= 0 then 
 				p:damage(s.dmg)
 				local oldx,oldy = p.x,p.y
@@ -504,6 +506,7 @@ function Mob(x,y)
 			
 			for _,v in ipairs(bullet)do
 				if col(v.x,v.y,v.w,v.h,s.x,s.y,s.w,s.h) then
+					sfx(12,"E-4")
 					s:damage(p.dmg)
 					table.remove(bullet,_)
 					addParts({x = s.x,y = s.y,c = 2,vx = math.cos(t),vy = math.sin(t)})
@@ -687,6 +690,7 @@ function Hunter(x,y)
 	
 	function s.attack(s)
 		if not s.atk then
+			sfx(5,"C-6",20,0,13)
 			local speed,dir,a = 1.5,(s.x-p.x)>0 and 0 or 2,angle(p.x,p.y,s.x,s.y)
 			local b = s:createBullet(s.x+dir,s.y+2,-speed*math.cos(a),-speed*math.sin(a))
 			table.insert(enemyBullet,b)
@@ -730,6 +734,7 @@ function forsakenGoblin(x,y)
 	
 	function s.attack(s)
 		if not s.atk then
+			sfx(5,"C-6",20,0,13)
 			local speed,dir,a = 1.5,(s.x-p.x)>0 and 0 or 2,angle(p.x,p.y,s.x,s.y)
 			local b = s:createBullet(s.x+dir,s.y+4,-speed*math.cos(a),-speed*math.sin(a))
 			table.insert(enemyBullet,b)
@@ -791,6 +796,7 @@ function Boss(x,y)
 				end
 				local b = s:createBullet(s.x+dir,s.y+2,-speed*math.cos(a),-speed*math.sin(a))
 				table.insert(enemyBullet,b)
+				sfx(3,"C#5") -- sound shoot
 			end
 			s.hitpause = 80
 			s.atk = true
@@ -850,7 +856,7 @@ function Boss(x,y)
 			end
 		end
 		pal()
-		printb(s.hp,0,100,1)
+		--printb(s.hp,0,100,1)
 	end
 	return s
 end
@@ -860,7 +866,7 @@ function Player(x,y)
 	s.type = "hero"
 	s.name = "princess"
 	s.money = 0
-	s.maxHp = 21
+	s.maxHp = 5
 	s.hp = s.maxHp
 	s.exp = 0
 	s.keys = 0
@@ -959,6 +965,7 @@ function Player(x,y)
 		if butnp("a")then Interact(s) end -- interacts with NPCs
 		if butnp("b")then s:onPotion()end -- Use Potion
 		if butn("x") and bullet_timer < 0 then  -- shoot
+			sfx(8,"D-4") -- sound atk
 			bullet_timer = bmax_timer
 			table.insert(bullet,{sp = 272,x = s.x,y = s.y,vx = bvx*2,vy = bvy*2,f = bf,r = br,w = 8,h = 8})
 		end
@@ -1041,6 +1048,7 @@ function safePoint(x,y)
 	function s.update(s)
 		if col2(s,p)and butnp("a")then
 			if p.hp < p.maxHp then
+				sfx(1,"D-5",30,0)
 				p.hp = p.maxHp
 				addDialog({"You have been restored"})
 			else
@@ -1048,6 +1056,7 @@ function safePoint(x,y)
 			end
 			Save()
 		end
+		if col2(s,p)then end
 		s.dy = math.cos((t/16))*2
 	end
 	
@@ -1167,6 +1176,7 @@ function Coin(x,y)
 		local rnd = math.random(5,10)
 		p.money = p.money + rnd
 		addParts({text = "+"..rnd,x = s.x,y = s.y,mode = 2,c = 3,small = true})
+		sfx(10,"A-6",30,3)
 	end
 	
 	function s.update(s)
@@ -1291,6 +1301,7 @@ function Key(x,y)
 	function s.onPickUp(s)
 		addDialog({"You found a key!"})
 		p.keys = p.keys + 1
+		sfx(13,"E-6",30,3)
 	end
 	return s
 end
@@ -1307,6 +1318,7 @@ function Exp(x,y)
 		
 		local oldx,oldy = s.x,s.y
 		addParts({x = oldx,y = oldy,c = 3,mode = 2,vy = - 0.5,text = "+"..exp.." exp"})
+		sfx(9,"D-6",30,3)
 	end
 	
 	function s.update(s)
@@ -1327,12 +1339,14 @@ function Door(x,y)
 	
 	function s.onInteract(s)
 		if butnp("a")and p.keys > 0 and s.open == False then
+			sfx(6,"C-5")
 			addDialog({"Unlocked"})
 			s.open = True
 			s.collide = False
 			p.keys = p.keys - 1
 		else
 			if not (s.open == True) then
+				sfx(14,"C#1",15)
 				addDialog({"Locked"})
 			end
 		end
@@ -1359,9 +1373,10 @@ function doorRoom(oldId,nextId,textScreen)
 		s.sp = 443
 		textScreen = textScreen or ""
 		s.enter = false
+		s.tile = 1
 		
-		function s.update(s)
-			if butnp("a")and col2(p,s) then
+		function s.onInteract(s)
+			if butnp("a")then
 				for _,m in ipairs(mobs)do
 					if m.name == "doorRoom"then
 						if m.id == nextId then
@@ -1373,12 +1388,13 @@ function doorRoom(oldId,nextId,textScreen)
 				fade(-2)
 				showTextScreen(textScreen)
 			end
-			
+		end		
+		
+		function s.update(s)			
 			s.dy = math.cos(t/16)*2
 		end
 		
 		function s.draw(s)
-			mset(s.x//8,s.y//8,1)
 			local wp = printb(textScreen,0,-6,2,false,1,true)
 			local cb,doorx,doory = 0,(s.x-wp//3),s.y-16+s.dy
 			if mget(doorx//8,doory//8) == 0 then cb = 1 else cb = 0 end
@@ -1391,7 +1407,6 @@ function doorRoom(oldId,nextId,textScreen)
 			end
 			sprc(s.sp,s.x,s.y,s.c,1)
 		end
-		
 		return s
 	end
 	return func
@@ -1415,6 +1430,7 @@ function Shop(x,y)
 					addDialog({"You don't have enough coins"})
 				end
 			end
+			sfx(9,"D-6",30,3)
 		end
 		s.dy = math.sin(t/16)*2
 		s.dy2 = math.cos((t/16))*2
@@ -1727,7 +1743,7 @@ function spawnMobs()
 		[132] = doorRoom("2-b","2-a","Dungeon"),
 		[133] = doorRoom("3-a","3-b","Zamon's library"),
 		[134] = doorRoom("3-b","3-a","Dungeon"),
-		[152] = doorRoom("!-a","!-b"),
+		[152] = doorRoom("!-a","!-b","Demon King's Room"),
 		[153] = doorRoom("!-b","!-a"),
 		
 		-- Items
@@ -1813,14 +1829,6 @@ button = {}
 
 function buttonUpdate()
 	button[1] = {
-		--[[{
-			str = "Start Game",
-			desc = "Start your story!",
-			on = function(s)
-				trace("\n============ \nGAME\n============",4)
-				_GAME.state = STATE_LOADING
-			end
-		},--]]
 		{
 			str = "New Game",
 			desc = "Start your story!",
@@ -1845,6 +1853,7 @@ function buttonUpdate()
 			desc = "",
 			on = function(s)
 				trace("\n============ \nOPTIONS\n============",4)
+				Music()
 				fade(-3)
 				_GAME.state = STATE_OPTION
 			end,
@@ -2001,6 +2010,7 @@ function menuUpdate()
 	if openingTimer <= 0 then
 		cls(0)
 		
+		Music(0,0,0,true)
 		printc("Who will",120+(math.cos(t/6)*2)*2,28,2,false,2,false,1)
 		printc("save",120+(math.sin(t/6)*2)*2,38,1,false,2)
 		printc("the princess?",120+(math.cos(t/6)*2)*2,48,3,false,2,false,2)
@@ -2122,7 +2132,8 @@ function Loading()
 		else
 			_GAME.state = STATE_GAME
 		end
-		--fade(-1)
+		showTextScreen("Dungeon")
+		music()
 	end
 end
 
