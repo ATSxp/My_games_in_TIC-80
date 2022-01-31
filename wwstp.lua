@@ -11,7 +11,7 @@ t = 0
 
 _GAME = {}
 _GAME.on = false
-_GAME.fps = true
+_GAME.fps = false
 _GAME.state = 1
 
 local False,True = 0,1
@@ -85,7 +85,7 @@ function set(tbl)
 	return s
 end
 
-SOLID = set{1,2,3,4,5,17,19,21,29,34,35,36,37,44,45,46,47,
+SOLID = set{1,2,3,4,5,8,9,17,19,21,24,25,29,34,35,36,37,44,45,46,47,
 60,61,62,63,72,73,74,75,76,77,78,79,92,93,94,95,108,109,
 110,111,124,125,126,127,140,141,142,143}
 
@@ -300,27 +300,29 @@ end
 
 function bulletDraw()
 	for _,v in ipairs(bullet)do
+		local sp = 272
 		if bChange then
-			sprc(273,v.x,v.y,11,1,v.f,v.r)
+			if p.da == True then
+				sp = 277
+			else
+				sp = 273
+			end
+		else
+			if p.da == True then
+				sp = 276
+			else
+				sp = 272
+			end
 		end
-		if not bChange then
-			sprc(272,v.x,v.y,11,1,v.f,v.r)
-		end
+		sprc(sp,v.x,v.y,11,1,v.f,v.r)
 		if _GAME.on then rectb(v.x-mx,v.y-my,v.w,v.h,9)end
 	end	
 end
 
 function bulletUpdate()
 	for i,v in ipairs(bullet)do
-		local x = v.x + v.vx
-		local y = v.y + v.vy
-		local w = v.w
-		local h = v.h
-		if 
-			sol(x,y +(h / 2 + 1))or 
-			sol(x + (w - 1),y + (h / 2 + 1))or 
-			sol(x,y + (h - 1))or
-			sol(x + (w - 1),y + (h - 1))then
+		local x,y,w,h = v.x + v.vx,v.y + v.vy,v.w,v.h
+		if sol(x,y +(h / 2 + 1))or sol(x + (w - 1),y + (h / 2 + 1))or sol(x,y + (h - 1))or sol(x + (w - 1),y + (h - 1))then
 			local Oldx,Oldy = v.x,v.y
 			addParts({x = Oldx,y = Oldy,s = math.random(2,5),c = math.random(0,2),vx = math.random(-1,1),vy = math.random(-1,1)})
 			addParts({mode = 4,x = Oldx,y = Oldy,s = math.random(2,5),c = math.random(0,2),vx = math.random(-1,1),vy = math.random(-1,1)})
@@ -328,13 +330,14 @@ function bulletUpdate()
 			table.remove(bullet,i)
 		end
 		
-		if v.vy < 0 then v.r = 3 -- up
-		elseif v.vy > 0 then v.r = 1 end -- down
-		if v.vx < 0 then v.f = 1 v.r = 0 -- left
-		elseif v.vx > 0 then v.f = 0 v.r = 0 end -- right
-		if v.vy > 0 and v.vx < 0 and bChange then v.r = 1 end -- down/left
-		if v.vy > 0 and v.vx > 0 and bChange then v.r = 1 end -- down/right
-		
+		if p.dir == 1 then v.r = 3 -- up
+		elseif p.dir == 2 then v.r = 1 end -- down
+		if p.dir == 3 then v.f = 1 v.r = 0 -- left
+		elseif p.dir == 4 then v.f = 0 v.r = 0 end -- right
+		if p.dir == 5 then v.f = 1 end -- up/left
+		if p.dir == 7 and bChange then v.r = 1 v.f = 1 -- down/left
+		elseif p.dir == 8 and bChange then v.r = 1 v.f = 0 end -- down/right
+	
 		if v.x - mx < 0 or v.x - mx > 240 or v.y - my < 0 or v.y - my > 136 then table.remove(bullet,i) end
 		
 		v.x = v.x + v.vx
@@ -451,10 +454,9 @@ function Mob(x,y)
 	function s.updateEnemy(s)
 		if s.type == "enemy" then
 			
+			if s.vx ~= 0 then s.f = s.vx < 0 and 1 or 0 end
 			if s.die == True then s.vanish = s.vanish + 1 end
 			if s.vanish > 100 then s.timer = s.timer + 1 end
-			
-			if s.vx ~= 0 then s.f = s.vx < 0 and 1 or 0 end
 			
 			if s.hit > 0 then s.hit = s.hit - 1 end
 			if s.hitpause <= 0 then s.atk = false end
@@ -615,7 +617,7 @@ function Skeleton(x,y)
 		atk = {339,340},
 		die = {341},
 	}
-	s.hp = 10
+	s.hp = 50
 	s.speed = 0.3
 	s.range = 20
 	s.dmg = 3
@@ -753,7 +755,8 @@ function Boss(x,y)
 		atk = {432,434},
 		die = {436},
 	}
-	s.hp = 22
+	s.maxHp = 100
+	s.hp = s.maxHp
 	s.w = 16
 	s.h = 16
 	s.range = 150
@@ -762,7 +765,11 @@ function Boss(x,y)
 	s.animSpeed = 16
 	s.minDelayAtk = 40
 	s.maxDelayAtk = 120
+	s.spawnMobTimer = 100
 	s.supUpdate = s.update
+	local mob = {
+		Goblin,Bat,Skeleton,Cerberus,
+	}
 	
 	function s.createBullet(s,x,y,vx,vy)
 		local b = Bullet(x,y,vx,vy)
@@ -775,10 +782,13 @@ function Boss(x,y)
 	
 	function s.attack(s)
 		if not s.atk then
-			local num = 8
-			if s.hp > 22/2 then num = 8 else num = 16 end
-			for i=1,num do
-				local speed,dir,a = 1.5,4,math.random()*4*(math.pi*4)--angle(p.x,p.y,s.x,s.y)
+			for i=1,4 do
+				local speed,dir,a = 1.5,4
+				if s.hp < s.maxHp/2 then
+					a = math.random()*4*math.pi
+				else
+					a = angle(p.x,p.y,s.x,s.y)
+				end
 				local b = s:createBullet(s.x+dir,s.y+2,-speed*math.cos(a),-speed*math.sin(a))
 				table.insert(enemyBullet,b)
 			end
@@ -787,17 +797,34 @@ function Boss(x,y)
 		end
 	end
 	
+	function s.regenerate(s)
+		if s.hitpause < 10  and s.hp < s.maxHp then
+			s.hp = s.hp + (1/32)
+			if s.hp > s.maxHp then s.hp = s.maxHp end
+			addParts({x=s.x+8,y=s.y+8,c=3,vy=-math.random(1,3),mode=5,max=5})
+		end
+	end
+	
 	function s.update(s)
-		if bossBattle then
+		if bossBattle and not bossDead then
 			s:supUpdate()
+			if s.spawnMobTimer > 0 then s.spawnMobTimer = s.spawnMobTimer -1 end
 			s.dmg = math.random(1,5)
 			if s.hp <= 3 then
 				s.minDelayAtk = 0
 				s.maxDelayAtk = 10
 				s.animSpeed = 8
 			end
+			if s.spawnMobTimer <= 0 then
+				local rnd = math.random(1,#mob)
+				table.insert(mobs,mob[rnd](s.x,s.y))
+				s.spawnMobTimer = 100
+			end
+			s:regenerate()
 		end
+		
 		if s.die == True then
+			bossDead = true
 			unlockRoom(224,102,226,102)
 			bossBattle = false
 	 end
@@ -823,6 +850,7 @@ function Boss(x,y)
 			end
 		end
 		pal()
+		printb(s.hp,0,100,1)
 	end
 	return s
 end
@@ -832,21 +860,21 @@ function Player(x,y)
 	s.type = "hero"
 	s.name = "princess"
 	s.money = 0
-	s.maxHp = 5
+	s.maxHp = 21
 	s.hp = s.maxHp
 	s.exp = 0
 	s.keys = 0
 	s.potions = 0
-	s.boost = 0
-	s.ma = 0 -- "Multiplied Arrows" Power Up
-	s.da = 0 -- "Diamond Arrows" Power Up
+	s.ma = False -- "Multiplied Arrows" Upgrade
+	s.da = False -- "Diamond Arrows" Upgrade
 	s.shield = 0
 	s.sp = 256
 	s.f = 1
-	s.dmgExtra = 0
+	s.dmgExtra = s.maxHp - 5
 	s.dmg = 1 + s.dmgExtra
-	s.speed = 1.3
+	s.speed = 1
 	s.supMove = s.move
+	s.dir = 0
 	
 	function s.move(s,dx,dy)
 		s:supMove(dx,dy)		
@@ -889,6 +917,7 @@ function Player(x,y)
 			s.maxHp = s.maxHp + 1
 			s.hp = s.maxHp
 			s.dmgExtra = s.dmgExtra + 1
+			if s.exp > 21 then s.exp = 21 end
 		end
 	end
 	
@@ -901,25 +930,32 @@ function Player(x,y)
 		bullet_timer = bullet_timer - 1
 		if s.hit > 0 then s.hit = s.hit - 1 end
 		if s.shield > 0 then s.shield = s.shield - 1 end
-		if s.ma > 0 then bmax_timer = 10 end
-		if s.da > 0 then s.dmg = math.random(2+s.dmgExtra,5+s.dmgExtra) 
+		if s.ma == True then bmax_timer = 10 end
+		if s.da == True then s.dmg = math.random(2+s.dmgExtra,5+s.dmgExtra) 
 		else s.dmg = math.random(1+s.dmgExtra,2+s.dmgExtra)end
-		if s.boost > 0 then s.boost = s.boost - 1 s.speed = 1.6
-		else s.speed = 0.9 end
 		
 		s.anims.walk = anim({257,258})
 		s.anims.atk = anim({259,260},16)
 		s.anims.idle = 256
 		s.anims.die = 261
 		
-		if butn("up")then s:move(0,- s.speed) bvx,bvy = 0,- 2 bChange = false end -- up
-		if butn("down")then s:move(0,s.speed) bvx,bvy = 0,2 bChange = false end -- down
-		if butn("left")then s:move(- s.speed,0) bvx,bvy = -2,0 bChange = false end -- left 
-		if butn("right")then s:move(s.speed,0) bvx,bvy = 2,0 bChange = false end -- right
-		if butn("up") and butn("left")then bvx,bvy = - 2,- 2 bChange = true end -- up/left
-		if butn("up") and butn("right")then bvx,bvy = 2,- 2 bChange = true end -- up/right
-		if butn("down") and butn("left")then bvx,bvy = - 2,2 bChange = true end -- down/left
-		if butn("dowm") and butn("right")then bvx,bvy = 2,2 bChange = true end -- down/right
+		if not butn("x")then
+			if butn("up")then bvx,bvy = 0,- 2 bChange = false s.dir = 1 end
+			if butn("down")then bvx,bvy = 0,2 bChange = false s.dir = 2 end
+			if butn("left")then bvx,bvy = -2,0 bChange = false s.dir = 3 end
+			if butn("right")then bvx,bvy = 2,0 bChange = false s.dir = 4 end
+		end
+		
+		if butn("up") and butn("left")then bvx,bvy = - 2,- 2 bChange = true s.dir = 5 end -- up/left
+		if butn("up") and butn("right")then bvx,bvy = 2,- 2 bChange = true s.dir = 6 end -- up/right
+		if butn("down") and butn("left")then bvx,bvy = - 2,2 bChange = true s.dir = 7 end -- down/left
+		if butn("down") and butn("right")then bvx,bvy = 2,2 bChange = true s.dir = 8 end -- down/right
+		
+		if butn("up")then s:move(0,- s.speed)end -- up
+		if butn("down")then s:move(0,s.speed)end -- down
+		if butn("left")then s:move(- s.speed,0)end -- left 
+		if butn("right")then s:move(s.speed,0)end -- right
+
 		if butnp("a")then Interact(s) end -- interacts with NPCs
 		if butnp("b")then s:onPotion()end -- Use Potion
 		if butn("x") and bullet_timer < 0 then  -- shoot
@@ -1108,15 +1144,6 @@ function Item(x,y)
 				s.t = s.t + 1
 			end
 		end
-		
-		--[[if s.pickUp == True then
-			for i=#mobs,1,-1 do
-				local m = mobs[i]
-				if m == s then
-					table.remove(mobs,i)
-				end
-			end
-		end--]]
 	end
 
 	function s.draw(s)
@@ -1176,23 +1203,10 @@ function Potion(x,y)
 	return s
 end
 
-function Boost(x,y)
-	local s = Item(x,y)
-	s.name = "boost"
-	s.sp = 226
-	
-	function s.onPickUp(s)
-		addDialog({"You got a \"Boost\"","You can run faster for a limited time."})
-		p.boost = 500
-	end
-	return s
-end
-
 function diamondArrow(x,y)
 	local s = Item(x,y)
 	s.name = "da"
 	s.sp = 228
-	
 	function s.onPickUp(s)
 		addDialog({"You got Diamond Arrow!","Now your arrow is stronger!!"})
 		p.da = 1
@@ -1204,7 +1218,6 @@ function multipleArrows(x,y)
 	local s = Item(x,y)
 	s.name = "ma"
 	s.sp = 227
-	
 	function s.onPickUp(s)
 		addDialog({"You got \"Multiplied Arrows!\"","Now you can shoot more arrows than\nbefore!!"})
 		p.ma = 1
@@ -1216,7 +1229,6 @@ function magicShield(x,y)
 	local s = Item(x,y)
 	s.name = "shield"
 	s.sp = 229
-	
 	function s.onPickUp(s)
 		addDialog({"You got \"Magic Shield\""})
 		p.shield = 500
@@ -1225,10 +1237,10 @@ function magicShield(x,y)
 end
 
 chest_item = {
-	-- 1, 2				3,   								4,    5,          6,  7,
-	{Coin,Coin,coinExchange,Boost,magicShield,Bat,Potion},
-	-- 1, 2, 3,  4,  5,  6,                    7,
-	{nil,nil,nil,nil,nil,"Watch out! A bat!!!",nil}
+	-- 1, 2				3,   								4,    						5,  6,
+	{Coin,Coin,coinExchange,magicShield,Bat,Potion},
+	-- 1, 2, 3,  4,   5,                     6,
+	{nil,nil,nil,nil,"Watch out! A bat!!!",nil}
 }
 
 function Chest(x,y)
@@ -1543,7 +1555,28 @@ function bestiaryUpdate()
 			desc = "\t\tUndoubtedly the fastest monster in\nthe dungeon, if you see him, I recommend\nyou to run!\t\tAlthough even running he\ncan catch you... well... me... just good\nluck with him.",
 			info = {"Level: middle","Hp: 5","Atk: 1/3"},
 		},
+		{
+			name = "Forsaken Goblin",
+			sp = {384,385,386,387,388,389,390},
+			desc = "\t\tIn the goblin tribe, if a goblin decides\nto leave the group he will be forced to\nroam the dungeons without a pack,\nalone.\t\tThey usually carry a type of\ncircular saw, it REALLY cuts!",
+			info = {"Level: middle","Hp: 3","Atk: 1"},
+		},
+		{
+			name = "Adventurer Hunter",
+			sp = {368,369,370,371,372,373,374},
+			desc = "\t\tIn some places there are groups of\nhunters who like to go after\nadventurers, and with dungeon\nadventurers it would be no different.\n\t\tThey attack the target looking to kill\nhim and steal all his items, they\nusually carry knives, they are masters\nat throwing them.",
+			info = {"Level: hard","Hp: 5","Atk: 1/2"},
+		},
 	}
+	
+	if	bossDead then
+		table.insert(beast,{
+			name="King Demon",
+			sp = {400},
+			desc="\t\tWe have arrived at the terrible,\ngreat, powerful and famous Demon\nKing!\t\tI don't have much to say\nabout him, just a very powerful\nbeing with unknown powers, no\nknight was able to defeat him.\t\tI\nwonder when he will be defeated.\n\t\tsurely it will be by a great\nknight.",
+			info = {},
+		})
+	end
 	global_hitpause = 1
 	clip(10,10,240-20,136-20)
 	cls()
@@ -1554,24 +1587,27 @@ function bestiaryUpdate()
 		beast_state = beast_state + 1
 	end
 	
+	local w,h
+	local sw,pw,bw = 0,70,146
 	for _,v in ipairs(beast)do
+		if v.name == "King Demon" then sw = 19;pw = 89;bw = 127;w,h = 2,2 else sw = 0;pw = 70;bw = 146;w,h = 1,1 end
 		if _ == beast_state then		
 			local x,y,s = 20,20,4
 			for d=1,#dirs do
 				for i=0,15 do
 					pal(i,3)
-					spr((v.sp~=nil and anim(v.sp)or 20),dirs[d][1]+x,dirs[d][2]+y,11,s)
+					spr((v.sp~=nil and anim(v.sp)or 20),dirs[d][1]+x,dirs[d][2]+y,11,s,0,0,w,h)
 				end
 			end
 			pal()
-			spr((v.sp~=nil and anim(v.sp)or 20),x,y,11,s)
+			spr((v.sp~=nil and anim(v.sp)or 20),x,y,11,s,0,0,w,h)
 			for i=1,#v.info do
 				printb(v.info[i],x-3,8*i+y+28,3,false,1,true,1)
 			end
 			if #v.info > 0 then  rectb(x-6,y+34,51,68,3)end
 			printc(v.name or "",120,15,3,false,1,false,1)
-			printb(v.desc or "",70,30,3,false,1,true,1)
-			rectb(67,27,146,95,3)
+			printb(v.desc or "",pw,30,3,false,1,true,1)
+			if v.desc ~= "" then rectb(67+sw,27,bw,95,3)	end
 			printb(_.."/"..#beast,12,12,3,false,1,true)
 		end
 	end
@@ -1685,21 +1721,20 @@ function spawnMobs()
 		[244] = Door,
 		[230] = safePoint,
 		[156] = Bestiary,
-		[232] = doorRoom("1-a","1-b","Boko's Store"), -- old door and next door
-		[233] = doorRoom("1-b","1-a","Dungeon"),
-		[234] = doorRoom("2-a","2-b","Zamon's Classroom"),
-		[235] = doorRoom("2-b","2-a","Dungeon"),
-		[250] = doorRoom("3-a","3-b","Zamon's library"),
-		[250] = doorRoom("3-b","3-a","Dungeon"),
-		[248] = doorRoom("!-a","!-b"),
-		[249] = doorRoom("!-b","!-a"),
+		[129] = doorRoom("1-a","1-b","Boko's Store"), -- old door and next door
+		[130] = doorRoom("1-b","1-a","Dungeon"),
+		[131] = doorRoom("2-a","2-b","Zamon's Classroom"),
+		[132] = doorRoom("2-b","2-a","Dungeon"),
+		[133] = doorRoom("3-a","3-b","Zamon's library"),
+		[134] = doorRoom("3-b","3-a","Dungeon"),
+		[152] = doorRoom("!-a","!-b"),
+		[153] = doorRoom("!-b","!-a"),
 		
 		-- Items
 		[241] = Coin,
 		[242] = coinExchange,
 		[224] = Chest,
 		[225] = Potion,
-		[226] = Boost,
 		[227] = multipleArrows,
 		[228] = diamondArrow,
 		[243] = Key,
@@ -1886,10 +1921,9 @@ function Hud()
 	if mget(potx//8,0) == 0 or mget(keyx//8,11) == 0 then cb = 1 else cb = 2 end
 	
 	if p.potions > 0 then spr(225,8*8,0,11,1) printb(p.potions,8*8+2,8,3,false,1,true,cb)end
-	if p.boost > 0 then spr(226,8*9,0,11,1) end
-	if p.ma > 0 then spr(227,8*10,1,11,1) end
-	if p.da > 0 then spr(228,8*11,1,11,1) end
-	if p.shield > 0 then spr(229,8*12,1,11,1)end
+	if p.ma == True then spr(227,8*8,1,11,1) end
+	if p.da == True then spr(228,8*10,1,11,1) end
+	if p.shield > 0 then spr(229,8*11,1,11,1)end
 	
 	printb("$"..p.money,monx,136-7,3,false,1,false,cb)
 	
@@ -2227,7 +2261,6 @@ function Debug()
 			{str = "Y: "..math.floor(p.y)},
 			{str = "Hp: "..p.hp},
 			{str = "Speed: "..p.speed},
-			{str = "Boost: "..p.boost},
 			{str = "bTimer: "..bullet_timer},
 			{str = "MapX: "..mx},
 			{str = "MapY: "..my},
@@ -2293,6 +2326,7 @@ function init()
 	startMusic = false
 	bestiaryOn = false
 	bossBattle = false
+	bossDead = false
 	openingTimer = 100
 	loadingTimer = math.random(100,500)
 	
