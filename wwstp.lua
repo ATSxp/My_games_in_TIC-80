@@ -15,7 +15,8 @@ _GAME.fps = false
 _GAME.state = 1
 
 local False,True = 0,1
-local exp = math.random(1,50)
+local expMin = 0
+local exp = math.random(1,50-expMin)
 
 keyb,but = false,true
 buts = {
@@ -207,7 +208,7 @@ function updateDialog()
 			printb(string.sub(str,1,text_pos),dix + 10,diy + 10,2,false,1,false)
 			spr(anim({507,508},24),dix + 240 - 24,diy + 68 - 22,11,2)
 			global_hitpause = 1
-			if text_pos < len and t%4==0 then text_pos = text_pos + 1 sfx(7,"D-3",-1,1,4)end
+			if text_pos < len and t%4==0 then text_pos = text_pos + 1 sfx(7,"A-4",30,3,4)end
 		end
 		textOn = true
 	else
@@ -245,9 +246,10 @@ function drawFade()
 		f.x = f.x + f.z
 		f.x2 = f.x2 - f.z
 		
-		
-		if f.z < 0 and f.x + 128 < 0 then table.remove(rec,i)
+		if f.z < 0 and f.x + 128 < 0 then
+			table.remove(rec,i)
 		else global_hitpause = 1 end
+		if f.z < 0 and f.x + 120 < 0 then sfx(17,"G-1",30,0,10)end
 		
 		rect(f.x,0,120,136,0)
 		rect(f.x2,0,120,136,0)
@@ -396,7 +398,7 @@ function Mob(x,y)
 		s.vy = dy
 		
 		local x,y,w,h = s.x + s.vx,s.y + s.vy,s.w,s.h
-		if sol(x+1,y+((h/2)+1))or sol(x+(w-1),y+((h/2)+1))or sol(x+1,y+(h-1))or sol(x+(w-1),y+(h-1))then
+		if sol(x+1,y+((h/2)+1))or sol(x+(w-2),y+((h/2)+1))or sol(x+1,y+(h-1))or sol(x+(w-2),y+(h-1))then
 			s.vx,s.vy = 0,0
 		end
 		
@@ -866,7 +868,7 @@ function Player(x,y)
 	s.type = "hero"
 	s.name = "princess"
 	s.money = 0
-	s.maxHp = 5
+	s.maxHp = 4
 	s.hp = s.maxHp
 	s.exp = 0
 	s.keys = 0
@@ -876,7 +878,7 @@ function Player(x,y)
 	s.shield = 0
 	s.sp = 256
 	s.f = 1
-	s.dmgExtra = s.maxHp - 5
+	s.dmgExtra = s.maxHp - 4
 	s.dmg = 1 + s.dmgExtra
 	s.speed = 1
 	s.supMove = s.move
@@ -906,7 +908,8 @@ function Player(x,y)
 	end
 	
 	function s.onPotion(s)
-		if not (s.die == False) and s.hp < s.maxHp  and s.potions > 0 then
+		if not (s.die == True) and s.hp < s.maxHp  and s.potions > 0 then
+			sfx(15,"A-5",30,1)
 			s.potions = s.potions - 1
 			s.hp = s.hp + 20
 			if s.hp > s.maxHp then s.hp = s.maxHp end
@@ -918,12 +921,12 @@ function Player(x,y)
 	function s.levelUp(s)
 		if s.exp > 100 then
 			addDialog({"Level up!!","One more heart has been added to your\nhealth bar"})
+			expMin = expMin + 5
 			s.exp = 0
 			s.exp = s.exp + exp
 			s.maxHp = s.maxHp + 1
 			s.hp = s.maxHp
 			s.dmgExtra = s.dmgExtra + 1
-			if s.exp > 21 then s.exp = 21 end
 		end
 	end
 	
@@ -945,12 +948,12 @@ function Player(x,y)
 		s.anims.idle = 256
 		s.anims.die = 261
 		
-		if not butn("x")then
-			if butn("up")then bvx,bvy = 0,- 2 bChange = false s.dir = 1 end
-			if butn("down")then bvx,bvy = 0,2 bChange = false s.dir = 2 end
-			if butn("left")then bvx,bvy = -2,0 bChange = false s.dir = 3 end
-			if butn("right")then bvx,bvy = 2,0 bChange = false s.dir = 4 end
-		end
+		--if not butn("x")then
+		if butn("up")then bvx,bvy = 0,- 2 bChange = false s.dir = 1 end
+		if butn("down")then bvx,bvy = 0,2 bChange = false s.dir = 2 end
+		if butn("left")then bvx,bvy = -2,0 bChange = false s.dir = 3 end
+		if butn("right")then bvx,bvy = 2,0 bChange = false s.dir = 4 end
+		--end
 		
 		if butn("up") and butn("left")then bvx,bvy = - 2,- 2 bChange = true s.dir = 5 end -- up/left
 		if butn("up") and butn("right")then bvx,bvy = 2,- 2 bChange = true s.dir = 6 end -- up/right
@@ -1048,7 +1051,7 @@ function safePoint(x,y)
 	function s.update(s)
 		if col2(s,p)and butnp("a")then
 			if p.hp < p.maxHp then
-				sfx(1,"D-5",30,0)
+				sfx(1,"D-5",30,1)
 				p.hp = p.maxHp
 				addDialog({"You have been restored"})
 			else
@@ -1076,7 +1079,6 @@ function NPC(name,sp,dialogs,type,spawn)
 		local s = Mob(x,y)
 		s.type = type or "npc"
 		s.name = name
-		s.hp = nil
 		s.sp =  sp
 		s.dpos = 0
 		s.dcolor = 0
@@ -1092,14 +1094,13 @@ function NPC(name,sp,dialogs,type,spawn)
 		end
 		
 		function s.update(s)
-			s.dy = math.sin((t/16))*2
-		end
-		
-		function s.draw(s)
-			if s.sp > 207 and s.sp < 216 and t%32 == 0 then
-				if p.x > s.x then s.f = 0 else s.f = 1 end
-			end		
-			sprc(271,s.x,s.y+2,0,1)
+			local dst = math.sqrt((p.x-s.x)^2+(p.y-s.y)^2)
+			
+			if dst <= 24 then
+				if type == "npc" and t%16 == 0 then
+					if p.x > s.x then s.f = 0 else s.f = 1 end
+				end
+			end
 			
 			if s.type == "npc" or s.type == "board" or s.type == "dummy"then
 				s.collide = True
@@ -1107,6 +1108,11 @@ function NPC(name,sp,dialogs,type,spawn)
 				s.collide = False
 			end
 			
+			s.dy = math.sin((t/16))*2
+		end
+		
+		function s.draw(s)
+			sprc(271,s.x,s.y+2,0,1)		
 			sprc(s.sp,s.x,s.y,s.c,1,s.f)
 			
 			if not s.over and s.type == "npc" then
@@ -1119,7 +1125,6 @@ function NPC(name,sp,dialogs,type,spawn)
 					sprc(509,s.x,(s.y-10)+s.dy,11,1)
 				end
 			end
-			
 		end
 		return s
 	end
@@ -1158,7 +1163,7 @@ function Item(x,y)
 	function s.draw(s)
 		if not (s.pickUp == True) then
 			sprc(271,s.x,s.y+2,0,1)
-			sprc(s.sp,s.x,s.y+s.dy,s.c,1)
+			sprc(s.sp,s.x,s.y+s.dy-2,s.c,1)
 			if _GAME.on then rectb(s.x-mx,s.y-my,s.w,s.h,9)end
 		end
 	end
@@ -1173,10 +1178,10 @@ function Coin(x,y)
 	s.supUpdate = s.update
 	
 	function s.onPickUp(s)
+		sfx(10,"A-6",30,2,10)
 		local rnd = math.random(5,10)
 		p.money = p.money + rnd
 		addParts({text = "+"..rnd,x = s.x,y = s.y,mode = 2,c = 3,small = true})
-		sfx(10,"A-6",30,3)
 	end
 	
 	function s.update(s)
@@ -1194,6 +1199,7 @@ function coinExchange(x,y)
 	s.sp = 242
 	
 	function s.onPickUp(s)
+		sfx(13,"E-6",30,2,10)
 		local rnd = math.random(20,50)
 		p.money = p.money + rnd
 		addParts({text = "+"..rnd,x = s.x,y = s.y,mode = 2,c = 3})
@@ -1207,8 +1213,9 @@ function Potion(x,y)
 	s.sp = 225
 	
 	function s.onPickUp(s)
-		p.potions = p.potions + 1
+		sfx(13,"E-6",30,2,10)
 		addDialog({"You got a POTION!"})
+		p.potions = p.potions + 1
 	end
 	return s
 end
@@ -1218,6 +1225,7 @@ function diamondArrow(x,y)
 	s.name = "da"
 	s.sp = 228
 	function s.onPickUp(s)
+		sfx(13,"E-6",30,2,10)
 		addDialog({"You got Diamond Arrow!","Now your arrow is stronger!!"})
 		p.da = 1
 	end
@@ -1229,6 +1237,7 @@ function multipleArrows(x,y)
 	s.name = "ma"
 	s.sp = 227
 	function s.onPickUp(s)
+		sfx(13,"E-6",30,2,10)
 		addDialog({"You got \"Multiplied Arrows!\"","Now you can shoot more arrows than\nbefore!!"})
 		p.ma = 1
 	end
@@ -1240,6 +1249,7 @@ function magicShield(x,y)
 	s.name = "shield"
 	s.sp = 229
 	function s.onPickUp(s)
+		sfx(13,"E-6",30,2,10)
 		addDialog({"You got \"Magic Shield\""})
 		p.shield = 500
 	end
@@ -1267,6 +1277,7 @@ function Chest(x,y)
 		if s.open == True then return end	
 		for _,m in ipairs(mobs)do if m.type == "enemy" and col2(m,s)then s.collide = False else s.collide = True end end	
 		if col2(p,s)and butnp("a")then
+			sfx(6,"C-5",30,1,10)
 			s.open = True
 			local id = math.random(1,#chest_item[1])
 			table.insert(mobs,chest_item[1][id](s.x,s.y+6))
@@ -1299,9 +1310,9 @@ function Key(x,y)
 	s.sp = 243
 	
 	function s.onPickUp(s)
+		sfx(13,"E-6",30,2,10)
 		addDialog({"You found a key!"})
 		p.keys = p.keys + 1
-		sfx(13,"E-6",30,3)
 	end
 	return s
 end
@@ -1314,11 +1325,10 @@ function Exp(x,y)
 	s.supUpdate = s.update
 	
 	function s.onPickUp(s)
+		sfx(9,"D-6",30,2,10)
 		p.exp = p.exp + exp
-		
 		local oldx,oldy = s.x,s.y
 		addParts({x = oldx,y = oldy,c = 3,mode = 2,vy = - 0.5,text = "+"..exp.." exp"})
-		sfx(9,"D-6",30,3)
 	end
 	
 	function s.update(s)
@@ -1339,14 +1349,14 @@ function Door(x,y)
 	
 	function s.onInteract(s)
 		if butnp("a")and p.keys > 0 and s.open == False then
-			sfx(6,"C-5")
+			sfx(6,"C-5",30,1,10)
 			addDialog({"Unlocked"})
 			s.open = True
 			s.collide = False
 			p.keys = p.keys - 1
 		else
 			if not (s.open == True) then
-				sfx(14,"C#1",15)
+				sfx(14,"C#1",15,1,10)
 				addDialog({"Locked"})
 			end
 		end
@@ -1377,6 +1387,7 @@ function doorRoom(oldId,nextId,textScreen)
 		
 		function s.onInteract(s)
 			if butnp("a")then
+				sfx(16,"E-5",30,0,10)
 				for _,m in ipairs(mobs)do
 					if m.name == "doorRoom"then
 						if m.id == nextId then
@@ -1423,14 +1434,15 @@ function Shop(x,y)
 		if butnp("a")and col2(s,p) then
 			if type(s.price) == "number" then
 				if p.money >= s.price then
+					sfx(9,"D-6",30,2,10)
 					p.money = p.money - s.price
 					s.price = s.price * 2
 					s:buy()
 				else
+					sfx(14,"C#1",15,2,10)
 					addDialog({"You don't have enough coins"})
 				end
 			end
-			sfx(9,"D-6",30,3)
 		end
 		s.dy = math.sin(t/16)*2
 		s.dy2 = math.cos((t/16))*2
@@ -1798,17 +1810,19 @@ function spawnMobs()
 		},"npc"),
 		
 		-- Boards/notes etc
-		-- Board 1
-		[218] = NPC(nil,444,{
-			{"Boko's new store opened today!!!",
-			"come visit us!!",}
-		},"board"),
 		[216] = NPC(nil,460,{
 			{"Welcome to Evil Dungeon, a dungeon with\nthe worst monsters in THE ENTIRE KINGDOM!\nPlease leave your note at the end of the\ndungeon, the Demon King thanks you."}
 		},"board"),
 		[217] = NPC(nil,461,{
 			{"A-I-M-E-U-C-U"}
 		},"board"),
+		[218] = NPC(nil,444,{
+			{"Boko's new store opened today!!!",
+			"come visit us!!",}
+		},"board"),
+		[220] = NPC(nil,460,{
+			{"An amazing person...","...a peaceful person...","...a great collector."}
+		},"board")
 	}
 	for x = 0,240 do
 		for y = 0,136 do
@@ -1889,6 +1903,7 @@ function buttonUpdate()
 			printb(s.desc,90,78,2,false,1,false,1)
 			local w = print(s.str,0,-6,12)
 			if butnp("a")then
+				sfx(18,"G-2",30,0)
 				s:on()
 			end
 				printb("<",w+4,8*i+70,3)
@@ -1930,10 +1945,9 @@ function Hud()
 	if mget(potx//8,0) == 0 or mget(keyx//8,11) == 0 then cb = 1 else cb = 2 end
 	
 	if p.potions > 0 then spr(225,8*8,0,11,1) printb(p.potions,8*8+2,8,3,false,1,true,cb)end
-	if p.ma == True then spr(227,8*8,1,11,1) end
+	if p.ma == True then spr(227,8*9,1,11,1) end
 	if p.da == True then spr(228,8*10,1,11,1) end
 	if p.shield > 0 then spr(229,8*11,1,11,1)end
-	
 	printb("$"..p.money,monx,136-7,3,false,1,false,cb)
 	
 	if p.keys > 0 then
@@ -2047,7 +2061,7 @@ end
 
 function Load()
 	trace("\n============ \nLOADED\n============",2)
-	fade(-1)
+	fade(-2)
 	bossBattle = false
 	p.x = pmem(0)p.y = pmem(1)p.die = pmem(2)
 	p.hp = pmem(3)f.x = pmem(4)+10 f.y = pmem(5)
@@ -2065,7 +2079,7 @@ end
 
 function newGame()
 	trace("\n============ \nSAVE RESTART\n============",5)
-	fade(-1)
+	fade(-2)
 	for i=#mobs,1,-1 do
 		local m = mobs[i]
 		if m~=p and m~=s and m.name ~= "fairy" then
@@ -2123,7 +2137,6 @@ function Loading()
 	for i=1,#loadMsg[indexLoadMsg] do
 		printc(loadMsg[indexLoadMsg][i],120,8*i+90,3,false,1,true,1)
 	end
-	--print(indexLoadMsg,10,10,3)
 	
 	if loadingTimer < 0 then
 		if pmem(0)>0 then
@@ -2217,7 +2230,11 @@ function optionUpdate()
 		elseif butnp("down") and option_state < #button[2] then
 			option_state = option_state + 1
 		end
-		if butnp("b") then _GAME.state = STATE_MENU fade(-3)end
+		if butnp("b") then
+			sfx(18,"G-2",30,0)
+			_GAME.state = STATE_MENU 
+			fade(-3)
+		end
 	end
 		
 	for i,s in ipairs(button[2])do
@@ -2225,6 +2242,7 @@ function optionUpdate()
 			local w = print(s.str..s.desc,0,-6,12)
 			--printb(s.desc,11,8*i+10,2,false,1,false,1)
 			if butnp("a")then
+				sfx(18,"G-2",30,0)
 				s:on()
 			end
 				printb("<",w+4,8*i+10,3)
@@ -2322,7 +2340,11 @@ function Credits()
 	end
 	printb((but and "B" or "L").." to back",1,136-8,3,false,1,false,1)
 	
-	if butnp("b") and #rec <= 0 then _GAME.state = STATE_MENU fade(-3)end
+	if butnp("b") and #rec <= 0 then
+		sfx(18,"G-2",30,0)
+		_GAME.state = STATE_MENU 
+		fade(-3)
+	end
 	Debug()
 	drawFade()
 end
