@@ -1822,7 +1822,7 @@ function spawnMobs()
 		},"board"),
 		[220] = NPC(nil,460,{
 			{"An amazing person...","...a peaceful person...","...a great collector."}
-		},"board")
+		},"board"),
 	}
 	for x = 0,240 do
 		for y = 0,136 do
@@ -1845,18 +1845,20 @@ function buttonUpdate()
 	button[1] = {
 		{
 			str = "New Game",
-			desc = "Start your story!",
+			desc = "Start your new story!",
 			on = function(s)
 				trace("\n============ \nGAME\n============",4)
+				mx,my = p.x//240*240,p.y//136*136
 				newGame()
 				_GAME.state = STATE_LOADING
 			end
 		},
 		{
 			str = "Load Game",
-			desc = "Start your story!",
+			desc = pmem(0)>0 and "Continue your story!" or "-- Empty --",
 			on = function(s)
 				trace("\n============ \nGAME\n============",4)
+				mx,my = p.x//240*240,p.y//136*136
 				if pmem(0)>0 then
 					_GAME.state = STATE_LOADING
 				end
@@ -1900,7 +1902,7 @@ function buttonUpdate()
 		
 	for i,s in ipairs(button[1])do
 		if i == menu_state then
-			printb(s.desc,90,78,2,false,1,false,1)
+			printb(s.desc,90,78+math.sin(t/8)*2,2,false,1,false,1)
 			local w = print(s.str,0,-6,12)
 			if butnp("a")then
 				sfx(18,"G-2",30,0)
@@ -2023,6 +2025,11 @@ function menuUpdate()
 	openingTimer = openingTimer - 1
 	if openingTimer <= 0 then
 		cls(0)
+		for i=1,15 do pal(i,i-1)end
+		mx,my = 105*8,60*8
+		map(mx//8,my//8,31,18)
+		
+		tri(240,0,0,136,240,136,0)
 		
 		Music(0,0,0,true)
 		printc("Who will",120+(math.cos(t/6)*2)*2,28,2,false,2,false,1)
@@ -2156,6 +2163,18 @@ function Event()
 		bossBattle = true
 	elseif	bossBattle == false then
 		unlockRoom(224,102,226,102)
+	end
+		
+	local tutorial = {
+		{x = 15*8,y = 75*8,text = "interact",kb = "K",bb = "A"},
+		{x = 14*8,y = 58*8,text = "shoot",kb = "J",bb = "X"},
+		{x = 22*8,y = 56*8,text = "use the potion",kb = "L",bb = "B"},
+	}
+	for i,v in ipairs(tutorial)do
+		if col(p.x,p.y,p.w,p.h,v.x,v.y,8,8)then
+			printc("Press ["..(keyb and v.kb or v.bb).."] to "..v.text,
+			v.x-mx,v.y-16-my,3,false,1,true)
+		end
 	end
 end
 
@@ -2312,16 +2331,7 @@ function Credits()
 	cls()
 	map(mx//8,my//8,31,18,-(mx%8),-(my%8))
 	mx,my = math.cos(t/180)*(240/2)+((240*4)-116),math.sin(t/180)*(136/2)+((136*4)-80)
-	for _,m in ipairs(mobs)do
-		for c=1,3 do
-			pal(c,c-1)
-		end
-		if m.name ~= "princess" and m.name ~= "fairy" then
-			m:update()
-			m:draw()
-		end 
-	end
-	
+		
 	local credit = {
 		"-- Creator - Game - twitter --",
 		"",
