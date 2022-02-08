@@ -5,6 +5,10 @@
 -- saveid: save_game
 -- input: keyboard/gamepad
 
+--[[
+	This code is chaos =)
+--]]
+
 trace(string.upper("\ngame compiled\nand\nsuccessfully run"),6)
 
 t = 0
@@ -90,6 +94,7 @@ SOLID = set{1,2,3,4,5,6,7,8,9,10,12,17,19,21,22,24,25,29,
 34,35,36,37,38,39,40,44,45,46,47,52,54,55,56,60,61,62,63,
 72,73,74,75,76,77,78,79,92,93,94,95,108,109,110,111,124,
 125,126,127,140,141,142,143,188,189,190}
+LOCK = set{20}
 
 function anim(f,s)local f,s = f or {},s or 8;return f[((t//s)%#f)+1] end
 function angle(x1,y1,x2,y2)return math.atan2(y2-y1,x2-x1)end
@@ -98,7 +103,7 @@ function sol(x,y)
 		local hit = col(x,y,0,0,m.x,m.y,m.w,m.h)
 		if m.collide == True and hit then return true end
 	end
-	return SOLID:contains(mget(x//8,y//8))
+	return SOLID:contains(mget(x//8,y//8)) or LOCK:contains(mget(x//8,y//8))
 end
 function sprc(id,x,y,c,s,f,r,w,h)
 	local x,y,c,s,f,r,w,h = x or 0,y or 0,c or -1,s or 1,f or 0,r or 0,w or 1,h or 1
@@ -205,6 +210,7 @@ function updateDialog()
 		end
 		
 		if dialog_pos <= #dialog then
+			parts = {}
 			drawTextBox()
 			printb(string.sub(str,1,text_pos),dix + 10,diy + 10,2,false,1,false)
 			spr(anim({507,508},24),dix + 240 - 24,diy + 68 - 22,11,2)
@@ -325,7 +331,7 @@ end
 function bulletUpdate()
 	for i,v in ipairs(bullet)do
 		local x,y,w,h = v.x + v.vx,v.y + v.vy,v.w,v.h
-		if sol(x,y +(h / 2 + 1))or sol(x + (w - 1),y + (h / 2 + 1))or sol(x,y + (h - 1))or sol(x + (w - 1),y + (h - 1))then
+		if SOLID:contains(mget((x+1)//8,(y+((h/2)+1))//8))or SOLID:contains(mget((x+(w-1))//8,(y+((h/2)+1))//8))or SOLID:contains(mget((x+1)//8,(y+(h-1))//8))or SOLID:contains(mget((x+(w-1))//8,(y+(h-1))//8))then
 			sfx(12,"E-4")
 			local Oldx,Oldy = v.x,v.y
 			addParts({x = Oldx,y = Oldy,s = math.random(2,5),c = math.random(0,2),vx = math.random(-1,1),vy = math.random(-1,1)})
@@ -357,8 +363,8 @@ function Mob(x,y)
 	s.hp = 1
 	s.sp = s.sp
 	s.spawntile = 1
-	s.spawmx = x // 8
-	s.spawmy = y // 8
+	s.spawnx = x // 8
+	s.spawny = y // 8
 	s.tile = 16
 	s.anims = {}
 	s.die = False
@@ -413,6 +419,7 @@ function Mob(x,y)
 	
 	function s.damage(s,amount)
 		if not (s.die == True) then
+			sfx(17,"G-1",30,0)
 			s.hit = 5
 			local amt = amount or 1
 			s.hp = s.hp - amt
@@ -461,14 +468,13 @@ function Mob(x,y)
 	function s.updateEnemy(s)
 		if s.type == "enemy" then
 			
-			if s.vx < 0 then s.f = 1 elseif s.vx > 0 then  s.f = 0 end
+			--if s.vx < 0 then s.f = 1 elseif s.vx > 0 then  s.f = 0 end
 			if s.die == True then s.vanish = s.vanish + 1 end
 			if s.vanish > 100 then s.timer = s.timer + 1 end
 			
 			if s.hit > 0 then s.hit = s.hit - 1 end
-			if s.hitpause <= 0 then s.atk = false end
-			
-			if s.timer > 105 then for i=#mobs,1,-1 do local m = mobs[i];if m == s and m.name ~= "king_demon" then	table.remove(mobs,i)	end	end end
+			if s.hitpause <= 0 then s.atk = false end		
+			--if s.timer > 105 then for i=#mobs,1,-1 do local m = mobs[i];if m == s and m.name ~= "king_demon" then	table.remove(mobs,i)	end	end end
 			
 			if s.die == True then return end
 			
@@ -499,7 +505,7 @@ function Mob(x,y)
 			end
 			
 			local dst = math.sqrt(((p.x-s.x)^2+(p.y-s.y)^2))
-			if dst <= 50 then	if p.x < s.x then s.f = 1 else s.f = 0 end end
+			if dst <= s.range then	if p.x < s.x then s.f = 1 else s.f = 0 end end
 			if dst <= s.fov then
 				if t > s.t then
 					s:attack()
@@ -726,7 +732,8 @@ function forsakenGoblin(x,y)
 	s.hp = 3
 	s.dmg = 1
 	s.range = 140
-	s.fov = 8*10
+	s.fov = 8*8
+	s.tile = 66
 	s.supUpdate = s.update
 	
 	function s.createBullet(s,x,y,vx,vy)
@@ -751,6 +758,7 @@ function forsakenGoblin(x,y)
 	
 	function s.update(s)
 		s:supUpdate()
+		s.dmg = math.random(1,3)
 	end
 	return s
 end
@@ -759,6 +767,8 @@ function Boss(x,y)
 	local s = Mob(x,y)
 	s.type = "enemy"
 	s.name = "king_demon"
+	s.x = x - 4 or 0
+	s.y = y - 4 or 0
 	s.sp = 400
 	s.anims = {
 		idle = {400,402},
@@ -776,7 +786,6 @@ function Boss(x,y)
 	s.animSpeed = 16
 	s.minDelayAtk = 40
 	s.maxDelayAtk = 120
-	s.spawnMobTimer = 100
 	s.supUpdate = s.update
 	local mob = {
 		Goblin,Bat,Skeleton,Cerberus,
@@ -793,13 +802,15 @@ function Boss(x,y)
 	
 	function s.attack(s)
 		if not s.atk then
-			for i=1,4 do
+			local n = 16
+			for i=1,n do
 				local speed,dir,a = 1.5,4
 				if s.hp < s.maxHp/2 then
 					a = math.random()*4*math.pi
 				else
 					a = angle(p.x,p.y,s.x,s.y)
 				end
+				if s.hp <= 20 then n = 32 else n = 16 end
 				local b = s:createBullet(s.x+dir,s.y+2,-speed*math.cos(a),-speed*math.sin(a))
 				table.insert(enemyBullet,b)
 				sfx(3,"C#5") -- sound shoot
@@ -820,22 +831,17 @@ function Boss(x,y)
 	function s.update(s)
 		if bossBattle and not bossDead then
 			s:supUpdate()
-			--if s.spawnMobTimer > 0 then s.spawnMobTimer = s.spawnMobTimer -1 end
 			s.dmg = math.random(1,5)
 			if s.hp <= 3 then
 				s.minDelayAtk = 0
 				s.maxDelayAtk = 10
 				s.animSpeed = 8
 			end
-			--[[if s.spawnMobTimer <= 0 then
-				local rnd = math.random(1,#mob)
-				table.insert(mobs,mob[rnd](s.x,s.y))
-				s.spawnMobTimer = 100
-			end--]]
 			s:regenerate()
 		end
 		
 		if s.die == True then
+			addParts({x=s.x+8,y=s.y,vy=-1,vx=math.cos(t),c=1})
 			bossDead = true
 			unlockRoom(224,102,226,102)
 			bossBattle = false
@@ -863,7 +869,6 @@ function Boss(x,y)
 			end
 		end
 		pal()
-		--printb(s.hp,0,100,1)
 	end
 	return s
 end
@@ -876,7 +881,7 @@ function Player(x,y)
 	s.maxHp = 4
 	s.hp = s.maxHp
 	s.exp = 0
-	s.potions = 0
+	s.potions = 10
 	s.ma = False -- "Multiplied Arrows" Upgrade
 	s.da = False -- "Diamond Arrows" Upgrade
 	s.shields = 0
@@ -896,13 +901,9 @@ function Player(x,y)
 	
 	function s.cam(s)
 		local x,y = s.x//240*240,s.y//136*136
-		if p.x > 210*8 and (p.y > 101*8 and p.y < 135*8) then
-			my = math.min(119*8,math.max(102*8,math.floor(p.y) - 68))
-		else
-			if x ~= mx or y ~= my then
-				mx = x
-				my = y
-			end
+		if x ~= mx or y ~= my then
+			mx = x
+			my = y
 		end
 	end
 	
@@ -1047,7 +1048,7 @@ function Fairy(x,y)
 	end
 	
 	function s.draw(s)
-		if not (s.x-mx >= 0 and s.x-mx <= 240 - s.w and s.y-my >= 0 and s.y-my <= 136 - s.h) then return end
+		if not (s.x-mx >= 0 and s.x-mx <= 240 and s.y-my >= 0 and s.y-my <= 136) then return end
 		sprc(271,s.x,s.y + 3,0,1)
 		sprc(s.sp,s.x,s.y + s.dy - 4,s.c,1)
 	end
@@ -1700,11 +1701,11 @@ function Bullet(x,y,vx,vy)
 		local y = s.y + s.vy
 		local w = s.w
 		local h = s.h
-		if 
-			sol(x+1,y+((h/2)+1))or 
-			sol(x+(w-1),y+((h/2)+1))or 
-			sol(x+1,y+(h-1))or
-			sol(x+(w-1),y+(h-1))then
+		if
+			SOLID:contains(mget((x+1)//8,(y+((h/2)+1))//8))or 
+			SOLID:contains(mget((x+(w-1))//8,(y+((h/2)+1))//8))or 
+			SOLID:contains(mget((x+1)//8,(y+(h-1))//8))or
+			SOLID:contains(mget((x+(w-1))//8,(y+(h-1))//8))then
 			s:collide()
 		end
 		
@@ -1730,6 +1731,10 @@ function Bullet(x,y,vx,vy)
 				addParts({x = p.x,y = p.y,c = 2,vx = math.cos(t),vy = math.sin(t)})
 			end
 			s.hitpause = 40
+		end
+		
+		if not (s.x-mx >= 0 and s.x-mx <= 240 and s.y-my >= 0 and s.y-my <= 136) then
+			s:collide()
 		end
 		
 		local dx,dy = s.x - s.startx,s.y - s.starty
@@ -1777,7 +1782,6 @@ function spawnMobs()
 		[162] = Wall(415),
 		[173] = Wall(157),
 		[174] = Wall(158),
-		[41] = Wall(41),
 		[42] = Wall(42),
 		[43] = Wall(43),
 		[230] = safePoint,
@@ -1864,7 +1868,16 @@ function spawnMobs()
 		[220] = NPC(nil,460,{
 			{"An amazing person...","...a peaceful person...","...a great collector."}
 		},"board"),
+		[221] = NPC(nil,461,{
+			{"If a great being of renown falls into\ndespair, the door will be opened by its\nwhereabouts."}
+		},"board"),
+		[222] = NPC(nil,444,{
+			{"Nalph's old shop still hasn't closed\ntoday!!!",
+			"come visit us!!"}
+		},"board")
 	}
+	
+	local spawnPoints = {16,32,33,66,67}
 	for x = 0,239 do
 		for y = 0,135 do
 			local spawn = spawntiles[mget(x,y)]
@@ -2056,8 +2069,8 @@ function menuUpdate()
 		Music(0,-1,-1,true)
 		cls(0)
 		for i=1,15 do pal(i,i-1)end
-		mx,my = 105*8,60*8
-		map(mx//8,my//8,31,18)
+		mx,my = 90*8,52*8
+		map(mx//8,my//8,31,18,0,0,11)
 		
 		tri(240,0,0,136,240,136,0)
 		
@@ -2070,7 +2083,7 @@ function menuUpdate()
 		local w = print("-- @ATS_xp --",0,-6,12)
 		clip(0,0,240,136)
 		cls(0)
-		spr(14,(240 - (16 * 4))//2,30,11,4,0,0,2,2)
+		spr(266,(240 - (16 * 4))//2,30,11,4,0,0,2,2)
 		printb("-- @ATS_xp --",(240-w)//2,108,3,false,1,false,1)
 		clip()
 	end
@@ -2082,6 +2095,7 @@ function Save()
 	parts = {}
 	bullet = {}
 	enemyBullet = {}
+	p.hit = 0
 	save.px,save.py = math.floor(p.x),math.floor(p.y)
 	save.fx = math.floor(p.x) save.fy = math.floor(p.y)
 	pmem(0,save.px)pmem(1,save.py)pmem(2,False)
@@ -2089,7 +2103,7 @@ function Save()
 	pmem(6,p.exp)
 	for i=#mobs,1,-1 do
 		local m = mobs[i]
-		if m~=p and m~=s and m.name ~= "fairy" and m.type ~= "item" then
+		if m~=p and m~=s and m.name ~= "fairy" then
 			m:despawn()
 			table.remove(mobs,i)
 		end
@@ -2103,6 +2117,7 @@ function Load()
 	parts = {}
 	bullet = {}
 	enemyBullet = {}
+	p.hit = 0
 	bossBattle = false
 	p.x = pmem(0)p.y = pmem(1)p.die = pmem(2)
 	p.hp = pmem(3)f.x = pmem(4)+10 f.y = pmem(5)
@@ -2232,7 +2247,7 @@ function gameUpdate()
 	end
 	
 	cls()
-	map(mx//8,my//8,31,18,-(mx%8),-(my%8),0)
+	map(mx//8,my//8,31,18,-(mx%8),-(my%8),11)
 	
 	table.sort(mobs,layer)
 	
@@ -2364,8 +2379,8 @@ function Credits()
 		pal(c,c-1)
 	end
 	cls()
-	map(mx//8,my//8,31,18,-(mx%8),-(my%8))
-	mx,my = math.cos(t/180)*(240/2)+((240*4)-116),math.sin(t/180)*(136/2)+((136*4)-80)
+	map(mx//8,my//8,31,18,-(mx%8),-(my%8),11)
+	mx,my = math.cos(t/180)*(90/2)+((90*4)+350),math.sin(t/180)*(52/2)+((52*4)+200)
 		
 	local credit = {
 		"-- Creator - Game - twitter --",
